@@ -2,3 +2,6 @@
 [submodule "amazon-freertos"]
 	path = amazon-freertos
 	url = https://github.com/aws/amazon-freertos.git
+[submodule "LoRaMac-node"]
+	path = LoRaMac-node
+	url = https://github.com/dachalco/LoRaMac-node.git
