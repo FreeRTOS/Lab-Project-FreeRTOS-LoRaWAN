@@ -1,1 +1,4 @@
 
+[submodule "amazon-freertos"]
+	path = amazon-freertos
+	url = https://github.com/aws/amazon-freertos.git
