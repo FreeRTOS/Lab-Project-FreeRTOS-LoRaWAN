@@ -698,6 +698,55 @@ static void prvLorawanClassATask( void *params )
     vTaskDelete(NULL);
 }
 
+/**
+ * @brief Warn user if pvPortMalloc fails.
+ *
+ * Called if a call to pvPortMalloc() fails because there is insufficient
+ * free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+ * internally by FreeRTOS API functions that create tasks, queues, software
+ * timers, and semaphores.  The size of the FreeRTOS heap is set by the
+ * configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h.
+ *
+ */
+void vApplicationMallocFailedHook()
+{
+    configPRINT_STRING( ( "ERROR: Malloc failed to allocate memory\r\n" ) );
+    taskDISABLE_INTERRUPTS();
+
+    /* Loop forever */
+    for( ; ; )
+    {
+    }
+}
+
+
+/**
+ * @brief Loop forever if stack overflow is detected.
+ *
+ * If configCHECK_FOR_STACK_OVERFLOW is set to 1,
+ * this hook provides a location for applications to
+ * define a response to a stack overflow.
+ *
+ * Use this hook to help identify that a stack overflow
+ * has occurred.
+ *
+ */
+void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                    char * pcTaskName )
+{
+    configPRINT_STRING( ( "ERROR: stack overflow\r\n" ) );
+    portDISABLE_INTERRUPTS();
+
+    /* Unused Parameters */
+    ( void ) xTask;
+    ( void ) pcTaskName;
+
+    /* Loop forever */
+    for( ; ; )
+    {
+    }
+}
+
 /*******************************************************************************************
  * the app_main function
  * *****************************************************************************************/ 

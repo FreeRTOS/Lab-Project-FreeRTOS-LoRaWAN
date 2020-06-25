@@ -28,7 +28,6 @@
       <file file_name="SEGGER_RTT_Syscalls_SES.c" />
     </folder>
     <folder Name="System Files">
-      <file file_name="Cortex_M_Startup.s" />
       <file file_name="HardFaultHandler.S" />
       <file file_name="SEGGER_HardFaultHandler.c" />
       <file file_name="SEGGER_THUMB_Startup.s" />
@@ -143,19 +142,11 @@
         </folder>
       </folder>
       <folder Name="system">
-        <file file_name="../../LoRaMac-node/src/system/adc.c" />
-        <file file_name="../../LoRaMac-node/src/system/adc.h" />
         <file file_name="../../LoRaMac-node/src/system/delay.h" />
-        <file file_name="../../LoRaMac-node/src/system/eeprom.c" />
-        <file file_name="../../LoRaMac-node/src/system/eeprom.h" />
         <file file_name="../../LoRaMac-node/src/system/fifo.c" />
         <file file_name="../../LoRaMac-node/src/system/fifo.h" />
         <file file_name="../../LoRaMac-node/src/system/gpio.c" />
         <file file_name="../../LoRaMac-node/src/system/gpio.h" />
-        <file file_name="../../LoRaMac-node/src/system/gps.c" />
-        <file file_name="../../LoRaMac-node/src/system/gps.h" />
-        <file file_name="../../LoRaMac-node/src/system/i2c.c" />
-        <file file_name="../../LoRaMac-node/src/system/i2c.h" />
         <file file_name="../../LoRaMac-node/src/system/nvmm.c" />
         <file file_name="../../LoRaMac-node/src/system/nvmm.h" />
         <file file_name="../../LoRaMac-node/src/system/serial.h" />
@@ -163,8 +154,6 @@
         <file file_name="../../LoRaMac-node/src/system/systime.c" />
         <file file_name="../../LoRaMac-node/src/system/systime.h" />
         <file file_name="../../LoRaMac-node/src/system/timer.h" />
-        <file file_name="../../LoRaMac-node/src/system/uart.c" />
-        <file file_name="../../LoRaMac-node/src/system/uart.h" />
       </folder>
     </folder>
     <folder Name="freertos-osal">
@@ -184,9 +173,63 @@
     <configuration
       Name="Debug"
       c_preprocessor_definitions="NRF52840_XXAA;LORAWAN_USE_EXTERNAL_TIMERS"
-      c_user_include_directories="$(ProjectDir)/../../freertos/freertos_kernel/include;$(ProjectDir)/../../mcu/nordic_nrf52/config_files;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/svc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fifo;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/uart;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/stack_info;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/queue;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_hw;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_sw;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_flags;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mutex;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/sensorsim;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fds;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fstorage;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_fifo;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_advertising;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/common;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/boards;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_gatt;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_services/ble_nus;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_qwr;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/balloc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/bsp;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/button;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/delay;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/experimental_section_vars;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/hardfault;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log/src;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mem_manager;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/memobj;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/ringbuf;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/strerror;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/timer;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cifra;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/peer_manager;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/common;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/mbr/nrf52840/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/micro_ecc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/mbedtls;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/fprintf;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/nrf_cc310/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/segger_rtt;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310_bl;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/oberon;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/hal;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/boards/nrf52840-dk/aws_demos/config_files;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52;$(ProjectDir)/../../LoRaMac-node/src/mac;$(ProjectDir)/../../LoRaMac-node/src/mac/region;$(ProjectDir)/../../LoRaMac-node/src/system;$(ProjectDir)/../../LoRaMac-node/src/radio;$(ProjectDir)/../../LoRaMac-node/src/radio/sx126x;$(ProjectDir)/../../LoRaMac-node/src/peripherals/soft-se;$(ProjectDir)/../../LoRaMac-node/src/boards;$(ProjectDir)/../../freertos/libraries/abstractions/common_io/include" />
+      c_user_include_directories="$(ProjectDir)/../../freertos/freertos_kernel/include;$(ProjectDir)/../../mcu/nordic_nrf52/config_files;$(ProjectDir)/../../mcu/nordic_nrf52/board;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/svc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fifo;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/uart;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/stack_info;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/queue;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_hw;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_sw;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_flags;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mutex;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/sensorsim;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fds;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fstorage;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_fifo;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_advertising;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/common;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/boards;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_gatt;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_services/ble_nus;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_qwr;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/balloc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/bsp;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/button;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/delay;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/experimental_section_vars;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/hardfault;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log/src;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mem_manager;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/memobj;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/ringbuf;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/strerror;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/timer;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cifra;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/peer_manager;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/common;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/mbr/nrf52840/headers;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/micro_ecc;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/mbedtls;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/fprintf;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/nrf_cc310/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/segger_rtt;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310_bl;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/oberon;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/hal;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../freertos/vendors/nordic/boards/nrf52840-dk/aws_demos/config_files;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52;$(ProjectDir)/../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52;$(ProjectDir)/../../LoRaMac-node/src/mac;$(ProjectDir)/../../LoRaMac-node/src/mac/region;$(ProjectDir)/../../LoRaMac-node/src/system;$(ProjectDir)/../../LoRaMac-node/src/radio;$(ProjectDir)/../../LoRaMac-node/src/radio/sx126x;$(ProjectDir)/../../LoRaMac-node/src/peripherals/soft-se;$(ProjectDir)/../../freertos/libraries/abstractions/common_io/include;$(ProjectDir)/../../freertos/libraries/abstractions/common_io/include;$(ProjectDir)/../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/config" />
     <folder Name="config_files">
       <file file_name="../../mcu/nordic_nrf52/config_files/FreeRTOSConfig.h" />
+    </folder>
+    <folder Name="mcu">
+      <folder Name="nordic_nrf52">
+        <folder Name="config_files">
+          <file file_name="../../mcu/nordic_nrf52/config_files/board-config.h" />
+          <file file_name="../../mcu/nordic_nrf52/config_files/sdk_config.h" />
+        </folder>
+        <folder Name="board">
+          <file file_name="../../mcu/nordic_nrf52/board/pinName-board.h" />
+          <file file_name="../../mcu/nordic_nrf52/board/pinName-ioe.h" />
+          <file file_name="../../mcu/nordic_nrf52/board/gpio-board.c" />
+          <file file_name="../../mcu/nordic_nrf52/board/rtc-board.c" />
+          <file file_name="../../mcu/nordic_nrf52/board/board.c" />
+          <file file_name="../../mcu/nordic_nrf52/board/sx1262mbxcas-board.c" />
+          <file file_name="../../mcu/nordic_nrf52/board/gpio-board.h" />
+          <file file_name="../../mcu/nordic_nrf52/board/utilities.h" />
+        </folder>
+        <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_spi.c" />
+        <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/config/iot_spi_config.h" />
+      </folder>
+      <file file_name="../../LoRaMac-node/src/boards/mcu/utilities.c" />
+    </folder>
+    <folder Name="nRF5_SDK_15.2.0">
+      <folder Name="modules">
+        <folder Name="nrfx">
+          <folder Name="mdk">
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/nrf52840.h" />
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf_common.s" />
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf52840.s" />
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/system_nrf52.c" />
+          </folder>
+          <folder Name="drivers">
+            <folder Name="include">
+              <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_gpiote.h" />
+              <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_spim.h" />
+            </folder>
+          </folder>
+          <folder Name="src">
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_gpiote.c" />
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_spim.c" />
+          </folder>
+        </folder>
+      </folder>
+      <folder Name="components">
+        <folder Name="libraries">
+          <folder Name="util">
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_util_platform.c" />
+            <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_util_platform.h" />
+          </folder>
+        </folder>
+      </folder>
+    </folder>
+    <folder Name="CommonIO">
+      <file file_name="../../freertos/libraries/abstractions/common_io/include/iot_spi.h" />
     </folder>
   </project>
   <configuration
