@@ -48,5 +48,5 @@
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../class_a/main.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="33" useTextEdit="1" useBinaryEdit="0" left="0" path="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52/port.c" selected="1" top="6" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN/class_a" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN/class_a" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

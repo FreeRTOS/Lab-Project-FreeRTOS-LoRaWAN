@@ -178,6 +178,9 @@
       </folder>
     </folder>
     <folder Name="freertos-config" />
+    <configuration
+      Name="Debug"
+      c_user_include_directories="$(ProjectDir)/../../freertos/freertos_kernel/include" />
   </project>
   <configuration
     Name="Debug"
