@@ -197,7 +197,7 @@ static void prvTimersInit( void )
 }
 
 
-static void prvMiscInitialization( void )
+static void init_drivers( void )
 {
     /* Initialize modules.*/
     xUARTTxComplete = xSemaphoreCreateBinary();
@@ -383,6 +383,7 @@ void vApplicationDaemonTaskStartupHook( void )
     main();
 }
 
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -392,7 +393,7 @@ void vApplicationDaemonTaskStartupHook( void )
 int start_kernel( int argc, char ** argv )
 {
     /* Perform any hardware initialization that does not require the RTOS to be unning.  */
-    prvMiscInitialization();
+    init_drivers();
 
     xLoggingTaskInitialize( mainLOGGING_TASK_STACK_SIZE,
                             tskIDLE_PRIORITY,

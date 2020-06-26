@@ -34,6 +34,7 @@
 #define __BOARD_CONFIG_H__
 
 #include "nrf_gpio.h"
+#include "nrf_drv_spi.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -68,6 +69,11 @@ extern "C"
 #define LED_APP_DEMO                                P_0_14
 #define LED_RX_TOGGLE                               P_0_16
 
+
+#define LORA_MAC_SPI_FREQUENCY                     NRF_DRV_SPI_FREQ_4M
+#ifndef LORA_MAC_SPI_FREQUENCY
+    #define LORA_MAC_SPI_FREQUENCY                 10000000
+#endif
 
 #ifdef __cplusplus
 }

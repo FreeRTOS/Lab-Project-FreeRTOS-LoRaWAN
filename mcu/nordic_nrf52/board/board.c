@@ -25,6 +25,13 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "se-identity.h"
+#include "spi.h"
+#include "sx126x-board.h"
+#include "board-config.h"
+
+#include "nrf_drv_gpiote.h"
+
+//#include "rtc-board.h"
 
 void BoardCriticalSectionBegin( uint32_t *mask )
 {
@@ -43,4 +50,18 @@ void BoardGetUniqueId( uint8_t *id )
 {
     uint8_t eui[8] = LORAWAN_DEVICE_EUI;
     memcpy(id, eui, 8);
+}
+
+void BoardInitMcu( void )
+{
+    
+    // Radio's DIO1 will route irq line through gpio, hence gpiote
+    configASSERT(NRF_SUCCESS == nrf_drv_gpiote_init());
+    SpiInit(&SX126x.Spi, SPI_1, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, NC );
+    SX126xIoInit();
+    //RtcInit();
+    //EepromMcuInit();
+
+
+
 }

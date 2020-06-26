@@ -27,6 +27,7 @@
 #include "task.h"
 #include "spi.h"
 #include "iot_spi.h"
+#include "board-config.h"
 
 static IotSPIHandle_t SpiHandle[2];
 
@@ -47,7 +48,7 @@ void SpiInit( Spi_t *obj, SpiId_t spiId, PinNames mosi, PinNames miso, PinNames 
     {
         SpiFormat( obj, 8, 0, 0, 1 );
     }
-    SpiFrequency( obj, 10000000 );
+    SpiFrequency( obj, LORA_MAC_SPI_FREQUENCY );
 
     taskEXIT_CRITICAL();
 }
@@ -96,7 +97,8 @@ void SpiFormat( Spi_t *obj, int8_t bits, int8_t cpol, int8_t cpha, int8_t slave 
 
         spiConfig.eSetBitOrder = eSPIMSBFirst;
 
-        iot_spi_ioctl( SpiHandle[obj->SpiId], eSPISetMasterConfig, &spiConfig );
+        ret = iot_spi_ioctl( SpiHandle[obj->SpiId], eSPISetMasterConfig, &spiConfig );
+        configASSERT( IOT_SPI_SUCCESS == ret );
     }
 }
 
@@ -109,14 +111,22 @@ void SpiFrequency( Spi_t *obj, uint32_t hz )
     if( ret == IOT_SPI_SUCCESS )
     {
         spiConfig.ulFreq = hz;
-        iot_spi_ioctl( SpiHandle[obj->SpiId], eSPISetMasterConfig, &spiConfig );
+
+        ret = iot_spi_ioctl( SpiHandle[obj->SpiId], eSPISetMasterConfig, &spiConfig );
+        configASSERT( IOT_SPI_SUCCESS == ret );
     }
 }
+
+/* 
+ * Some boards require interrutps to be enabled to sync spi transaction to finish
+ * #define _PROTECT_BOARD_SPI_TRANSACTIONS
+ */
 
 uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
 {
     uint8_t rxData = 0;
     BaseType_t interruptStatus = 0;
+    int32_t ret;
 
     configASSERT( ( obj != NULL ) && ( SpiHandle[obj->SpiId ] != NULL ) );
 
@@ -124,6 +134,7 @@ uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
      * TODO: Remove mutual exclusion code and handle it in caller if needed.
      */
 
+    #ifdef _PROTECT_BOARD_SPI_TRANSACTIONS
     if( xPortIsInsideInterrupt() == pdTRUE )
     {
         interruptStatus = taskENTER_CRITICAL_FROM_ISR();
@@ -132,9 +143,15 @@ uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
     {
         taskENTER_CRITICAL( );
     }
+    #endif
 
-    while( iot_spi_transfer_sync( SpiHandle[ obj->SpiId ], ( uint8_t * ) &outData, &rxData, 1 ) == IOT_SPI_BUS_BUSY );
+    do 
+    {
+        ret = iot_spi_transfer_sync( SpiHandle[ obj->SpiId ], ( uint8_t * ) &outData, &rxData, 1 );
+    } while( ret == IOT_SPI_BUS_BUSY );
+    configASSERT( IOT_SPI_SUCCESS == ret );
 
+    #ifdef _PROTECT_BOARD_SPI_TRANSACTIONS
     if( xPortIsInsideInterrupt() == pdTRUE )
     {
         taskEXIT_CRITICAL_FROM_ISR( interruptStatus );
@@ -143,6 +160,7 @@ uint16_t SpiInOut( Spi_t *obj, uint16_t outData )
     {
         taskEXIT_CRITICAL( );
     }
+    #endif
 
     return( rxData );
 }
