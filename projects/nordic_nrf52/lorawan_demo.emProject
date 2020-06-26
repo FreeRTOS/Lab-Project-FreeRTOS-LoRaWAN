@@ -202,12 +202,12 @@
         <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_spi.c" />
         <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/config/iot_spi_config.h" />
         <folder Name="boot">
-          <file file_name="start.c" />
           <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf52840.s" />
           <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf_common.s" />
           <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/nrf52840.h" />
           <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/system_nrf52.c" />
           <file file_name="../../mcu/nordic_nrf52/boot/thumb_crt0.s" />
+          <file file_name="../../mcu/nordic_nrf52/boot/start.c" />
         </folder>
       </folder>
       <file file_name="../../LoRaMac-node/src/boards/mcu/utilities.c" />
