@@ -1,10 +1,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timer.h"
-#include "semphr.h"
-
 #include "LoRaMac.h"
 #include "board.h"
+#include "radio.h"
+#include "message_buffer.h"
+#include "queue.h"
 
 /*
  * @brief Default data rate used for uplink messages.
@@ -25,6 +26,7 @@
  */
 #define LORAWAN_MAX_MESG_SIZE                     242
 
+#define LORAWAN_APP_PORT_SIZE                     ( 1 )
 /**
  * @brief LoRa MAC layer port used for communication. Downlink messages
  * should be send on this port number.
@@ -37,6 +39,11 @@
 #define LORAWAN_PUBLIC_NETWORK                      1
 
 /**
+ * @brief Queue size for LoRaMAC response queue.
+ */
+#define LORAWAN_MAX_QUEUED_RESPONSES                    ( 10 )
+
+/**
  * @brief Maximum join attempts before giving up. LoRa tries a range of channels
  * within the band to send join requests for the first time.
  */
@@ -46,6 +53,13 @@
  * @brief Should send confirmed messages (with acknowledgment) or not.
  */
 #define LORAWAN_SEND_CONFIRMED_MESSAGES                 ( 1 )
+
+/**
+ * @brief Maximum time to wait for a downlink message. This should be greater than or equal to the 
+ * (RX1 + RX2) window duration for low latency downlink.
+ */
+
+#define LORAWAN_RECEIVE_TIMEOUT_MS                      ( 10000 )   
 
 /**
  * @brief Defines the application data transmission duty cycle time in milliseconds.
@@ -61,14 +75,9 @@
  * @brief EUI and keys that needs to be provisioned for device identity and security.
  */
 
-//#define DEV_EUI       { 0x32, 0x38, 0x33, 0x35, 0x60, 0x38, 0x71, 0x01 }
-//#define JOIN_EUI      { 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x02, 0xD1, 0xD4 }
-//#define APP_NWK_KEY   { 0xF5, 0x42, 0x96, 0x98, 0x8B, 0xC2, 0x23, 0x86, 0x56, 0x24, 0x1D, 0x73, 0x0A, 0xFA, 0x95, 0x0B }
-
-#define DEV_EUI       { 0x00, 0x99, 0x4B, 0x20, 0x69, 0x73, 0x06, 0xD1 } 
-#define JOIN_EUI      { 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x02, 0xF1, 0xAD }
-#define APP_NWK_KEY   { 0x55, 0x0C, 0x24, 0x1E, 0x52, 0x87, 0xF4, 0xEC, 0xF8, 0x93, 0xC5, 0x85, 0x8B, 0x7B, 0xE6, 0x72 }
-
+#define DEV_EUI       { 0x32, 0x38, 0x33, 0x35, 0x60, 0x38, 0x71, 0x01 };
+#define JOIN_EUI      { 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x02, 0xD1, 0xD4 };
+#define APP_NWK_KEY   { 0xF5, 0x42, 0x96, 0x98, 0x8B, 0xC2, 0x23, 0x86, 0x56, 0x24, 0x1D, 0x73, 0x0A, 0xFA, 0x95, 0x0B };
 /**
  * @biref Defines types of join methods.
  */
@@ -78,19 +87,29 @@ typedef enum
     LORAWAN_JOIN_MODE_ABP
 } LoraWanJoinMode_t;
 
-
-/*!
- * Device states used to control the LoRaWAN task.
- */
-typedef enum eDeviceState
+typedef enum
 {
-    DEVICE_STATE_RESTORE,
-    DEVICE_STATE_START,
-    DEVICE_STATE_JOIN,
-    DEVICE_STATE_SEND,
-    DEVICE_STATE_CYCLE,
-    DEVICE_STATE_SLEEP
-}DeviceState_t;
+    LORAMAC_RESPONSE_TYPE_MLME = 0,
+    LORAMAC_RESPONSE_TYPE_MCPS
+} LoRaMacResponseType_t;
+
+typedef struct LoRaMacResponse
+{
+    LoRaMacResponseType_t type;
+    union
+    {
+        MlmeConfirm_t mlmeConfirm;
+        McpsConfirm_t mcpsConfirm;
+    } resp;
+} LoRaMacResponse_t;
+
+typedef struct LoRaMacMessage
+{
+    uint8_t port;
+    size_t length;
+    uint8_t buffer[ LORAWAN_MAX_MESG_SIZE ];
+} LoRaMacMessage_t;
+
 
 /**
  * @brief Strings for denoting status responses from LoRaMAC layer.
@@ -147,27 +166,28 @@ static const char* EventInfoStatusStrings[] =
         "Beacon not found"               // LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND
 };
 
-/**
- * @brief Device state to LoRaWAN operations.
- */
-static DeviceState_t DeviceState;
-
 
 static LoRaMacPrimitives_t LoRaMacPrimitives;
+
 static LoRaMacCallback_t LoRaMacCallbacks;
 
 /**
- * @brief Main loRaWAN task handle.
+ * @brief Main loRaWAN application task handle.
  */
-static TaskHandle_t loRaWANTask;
-
-static uint8_t message[LORAWAN_MAX_MESG_SIZE];
+static TaskHandle_t xLoRaTask;
 
 /**
- * @brief Semaphore used to wake up lorawan task of interrupt wakeupLoRaTasks
- * or status/events from LoRaMAC stack.
+ * @brief Radio task which is a high priority task used for deffered processing of 
+ * radio interrupts.
  */
-static SemaphoreHandle_t wakeupLoRaTask;
+static TaskHandle_t xRadioTask;
+
+/**
+ * @brief Queue used to wait for responses from LoRaMAC stack
+ */
+static QueueHandle_t xLoRaMacResponseQueue;
+
+static MessageBufferHandle_t xLoRaMacMessageBuffer;
 
 /**
  * @brief Packet timer used for controlled transmission of packets, thereby
@@ -175,111 +195,18 @@ static SemaphoreHandle_t wakeupLoRaTask;
  */
 static TimerEvent_t packetTimer;
 
-
-/**
- * @brief Initiates a join network.
- */
-static LoRaMacStatus_t prxJoinNetwork( void );
-
-static LoRaMacStatus_t prxJoinNetwork( void )
-{
-    LoRaMacStatus_t status;
-    MlmeReq_t mlmeReq;
-    mlmeReq.Type = MLME_JOIN;
-    mlmeReq.Req.Join.Datarate = LORAWAN_DEFAULT_DATARATE;
-
-    // Starts the join procedure
-    status = LoRaMacMlmeRequest( &mlmeReq );
-
-    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
-    {
-        configPRINTF(( "Next Tx in  : ~%lu second(s)\n", ( mlmeReq.ReqReturn.DutyCycleWaitTime / 1000 ) ));
-    }
-
-    return status;
-}
-
-/*
- * @brief Timer callback for backoff to obey duty cycle restrictions.
- */
-static void OnPacketTimerEvent( void* context )
-{
-    MibRequestConfirm_t mibReq;
-    LoRaMacStatus_t status;
-
-    TimerStop( &packetTimer );
-
-    mibReq.Type = MIB_NETWORK_ACTIVATION;
-    status = LoRaMacMibGetRequestConfirm( &mibReq );
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        if( mibReq.Param.NetworkActivation == ACTIVATION_TYPE_NONE )
-        {
-            /**
-             * Network not joined yet. Try to join again.
-             */
-            DeviceState = DEVICE_STATE_JOIN;
-        }
-        else
-        {
-            /**
-             * Device already joined LoRaWAN network. Start
-             * sending data.
-             */
-            DeviceState = DEVICE_STATE_SEND;
-        }
-    }
-
-    xSemaphoreGive( wakeupLoRaTask );
-}
-
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
-    configPRINTF(( "\n MCPS CONFIRM status: %s\n", EventInfoStatusStrings[mcpsConfirm->Status] ));
-    if( mcpsConfirm->Status != LORAMAC_EVENT_INFO_STATUS_OK )
-    {
-        DeviceState = DEVICE_STATE_SLEEP;
-    }
-    else
-    {
-        switch( mcpsConfirm->McpsRequest )
-        {
-        case MCPS_UNCONFIRMED:
-        {
-            // Check Datarate
-            // Check TxPower
-            configPRINTF(("Unconfirmed message has been sent out.\n"));
-            DeviceState = DEVICE_STATE_CYCLE;
-            break;
-        }
-        case MCPS_CONFIRMED:
-        {
-            // Check Datarate
-            // Check TxPower
-            // Check AckReceived
-            // Check NbTrials
-            if( mcpsConfirm->AckReceived == true )
-            {
-                configPRINTF(("ACK received for confirmed message.\n"));
-                DeviceState = DEVICE_STATE_CYCLE;
-            }
-            else
-            {
-                configPRINTF(("NACK received for confirmed message.\n"));
-                DeviceState = DEVICE_STATE_SLEEP;
-            }
-            break;
-        }
-        case MCPS_PROPRIETARY:
-        {
-            break;
-        }
-        default:
-            break;
-        }
+    
+    LoRaMacResponse_t response = { 0 };
+    
+    configPRINTF(( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[mcpsConfirm->Status] ));
 
-    }
+    response.type = LORAMAC_RESPONSE_TYPE_MLME;
+    memcpy( &response.resp.mcpsConfirm, mcpsConfirm, sizeof( MlmeConfirm_t ) );
+    
+    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY ); 
+   
 }
 
 /*!
@@ -313,58 +240,28 @@ static void PrintHexBuffer( uint8_t *buffer, uint8_t size )
 
 static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
-    configPRINTF(( "\nMCPS INDICATION status: %s\n", EventInfoStatusStrings[mcpsIndication->Status] ));
-    if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
-    {
-        return;
-    }
-
-    switch( mcpsIndication->McpsIndication )
-    {
-    case MCPS_UNCONFIRMED:
-    {
-        break;
-    }
-    case MCPS_CONFIRMED:
-    {
-        break;
-    }
-    case MCPS_PROPRIETARY:
-    {
-        break;
-    }
-    case MCPS_MULTICAST:
-    {
-        break;
-    }
-    default:
-        break;
-    }
-
+    
+    uint8_t  buffer[ LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE ];
+    configPRINTF(( "\nMCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status] ));
+    
+   if( ( mcpsIndication->Status ==  LORAMAC_EVENT_INFO_STATUS_OK ) && 
+       ( mcpsIndication->RxData == true ) )
+   {
+       buffer[0] = mcpsIndication->Port;
+       memcpy( ( buffer + LORAWAN_APP_PORT_SIZE ), mcpsIndication->Buffer, mcpsIndication->BufferSize );
+       
+       xMessageBufferSend( xLoRaMacMessageBuffer, buffer, ( mcpsIndication->BufferSize + LORAWAN_APP_PORT_SIZE ), portMAX_DELAY );
+   }
+   
     // Check Multicast
     // Check Port
     // Check Datarate
-    // Check FramePending
     if( mcpsIndication->FramePending == true )
     {
-        // The server signals that it has pending data to be sent.
-        // We schedule an uplink as soon as possible to flush the server.
-        OnPacketTimerEvent( NULL );
-    }
-    // Check Buffer
-    // Check BufferSize
-    // Check Rssi
-    // Check Snr
-    // Check RxSlot
-    if( mcpsIndication->RxData == true )
-    {
-        configPRINTF(( "Downlink data received: port: %d, slot: %d, data_rate:%d, rssi: %d, snr:%d data:\n",
-                mcpsIndication->Port,
-                mcpsIndication->RxSlot,
-                mcpsIndication->RxDatarate,
-                mcpsIndication->Rssi,
-                mcpsIndication->Snr );
-        PrintHexBuffer( mcpsIndication->Buffer, mcpsIndication->BufferSize ));
+       /**
+        * There are some pending commands to be sent uplink. Trigger an empty uplink
+        * or send a routine uplink message to piggyback these requests along with it.
+        */
     }
 }
 
@@ -378,64 +275,122 @@ static void MlmeIndication ( MlmeIndication_t* MlmeIndication )
 static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
 {
     LoRaMacEventInfoStatus_t status = mlmeConfirm->Status;
-    MibRequestConfirm_t mibGet;
-    static int nJoinAttempts = LORAWAN_MAX_JOIN_ATTEMPTS;
+    LoRaMacResponse_t response;
 
-    configPRINTF(("MLME CONFIRM  status: %s\n", EventInfoStatusStrings[status]));
+    response.type = LORAMAC_RESPONSE_TYPE_MLME;
+    memcpy( &response.resp.mlmeConfirm, mlmeConfirm, sizeof( MlmeConfirm_t ) );
+    
+    configPRINTF(( "MLME CONFIRM  status: %s\n", EventInfoStatusStrings[status] ));
 
-    switch( mlmeConfirm->MlmeRequest )
-    {
-    case MLME_JOIN:
-    {
-
-        if( status == LORAMAC_EVENT_INFO_STATUS_OK )
-        {
-            configPRINTF(("OTAA JOIN Successful\n\n"));
-
-            mibGet.Type = MIB_DEV_ADDR;
-            LoRaMacMibGetRequestConfirm( &mibGet );
-            configPRINTF(( "DevAddr : %08lX\n", mibGet.Param.DevAddr ));
-
-            mibGet.Type = MIB_CHANNELS_DATARATE;
-            LoRaMacMibGetRequestConfirm( &mibGet );
-            configPRINTF(( "DATA RATE   : DR_%d\n", mibGet.Param.ChannelsDatarate ));
-
-            DeviceState = DEVICE_STATE_SEND;
-            xSemaphoreGive( wakeupLoRaTask );
-        }
-        else
-        {
-            if( nJoinAttempts > 0 )
-            {
-                configPRINTF(("Join Failed, max join attempts left: %d\n", nJoinAttempts ));
-                nJoinAttempts--;
-                DeviceState = DEVICE_STATE_CYCLE;
-                xSemaphoreGive( wakeupLoRaTask );
-            }
-            else
-            {
-                configPRINTF(( "Join Failed, no attempts left..\n" ));
-                DeviceState = DEVICE_STATE_SLEEP;
-            }
-        }
-        break;
-    }
-
-    default:
-        break;
-    }
+    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY ); 
 }
 
-static void OnMacProcessNotify( void )
+static void OnRadioNotify( bool fromISR )
 {
-    xSemaphoreGiveFromISR(wakeupLoRaTask, NULL);
+    BaseType_t xHigherPriorityTaskWoken;
+
+    if( fromISR )
+    {
+        xHigherPriorityTaskWoken = pdFALSE;
+
+        vTaskNotifyGiveFromISR( xRadioTask, &xHigherPriorityTaskWoken );
+
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+    }
+    else
+    {
+        xTaskNotifyGive( xRadioTask );
+    }
 }
+
 uint8_t  getBatteryLevel( void )
 {
     return 0;
 }
 
-static LoRaMacStatus_t configure( void )
+/**
+ * @brief Join to a LORAWAN network using OTAA join mechanism..
+ * Blocks until the configured number of tries are reached or join is successful.
+ */
+
+static LoRaMacStatus_t prvOTAAJoinNetwork( void )
+{
+    LoRaMacStatus_t status;
+    MlmeReq_t mlmeReq = { 0 };
+    MibRequestConfirm_t mibReq = { 0 };
+    uint32_t ulDutyCycleTimeMS = 0U;
+    LoRaMacResponse_t response;
+    LoRaMacEventInfoStatus_t responseStatus;
+    size_t xNumTries; 
+    
+    mlmeReq.Type = MLME_JOIN;
+    mlmeReq.Req.Join.Datarate = LORAWAN_DEFAULT_DATARATE;
+    
+    for( xNumTries = 0; xNumTries < LORAWAN_MAX_JOIN_ATTEMPTS; xNumTries++ )
+    {
+        /**
+         * Initiates the join procedure. If the stack returns a duty cycle restricted error,
+         * then retry after the duty cycle period of time. Duty cycle errors are not counted
+         * as a failed try.
+         */
+        do
+        {
+            status = LoRaMacMlmeRequest( &mlmeReq );
+            if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+            {
+                ulDutyCycleTimeMS = mlmeReq.ReqReturn.DutyCycleWaitTime;
+                configPRINTF(( "Duty cycle restriction. Next Join in : ~%lu second(s)\n", ( ulDutyCycleTimeMS / 1000 ) ));
+                vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
+            }
+        } while ( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED );
+
+        if( status == LORAMAC_STATUS_OK )
+        {
+            xQueueReceive( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+    
+            if( ( response.type == LORAMAC_RESPONSE_TYPE_MLME ) && ( response.resp.mlmeConfirm.MlmeRequest == MLME_JOIN ) )
+            {
+                if( response.resp.mlmeConfirm.Status == LORAMAC_EVENT_INFO_STATUS_OK )
+                {
+                    configPRINTF(( "Successfully joined a LoRaWAN network.\n" ));
+                    
+                    mibReq.Type = MIB_DEV_ADDR;
+                    LoRaMacMibGetRequestConfirm( &mibReq );
+                    configPRINTF(( "Device address : %08lX\n", mibReq.Param.DevAddr ));
+                    
+                    mibReq.Type = MIB_CHANNELS_DATARATE;
+                    LoRaMacMibGetRequestConfirm( &mibReq );
+                    configPRINTF(( "Data rate : DR_%d\n", mibReq.Param.ChannelsDatarate ));
+                    
+                    break;
+                }
+                else
+                {
+                    configPRINTF(( "Failed to join loRaWAN network with status %d.\n", response.resp.mlmeConfirm.Status ));
+                    status = LORAMAC_STATUS_ERROR;
+                }
+            }
+        }
+        else
+        {
+            configPRINTF(( "Failed to initiate a LoRaWAN JOIN request with status %d.\n", status ));
+            break;
+        }
+        
+        if( xNumTries <  ( LORAWAN_MAX_JOIN_ATTEMPTS - 1 ) )
+        {
+            configPRINTF(( "Retrying join attempt after %lu seconds.\n", ( LORAWAN_APP_TX_DUTYCYCLE_MS / 1000 ) ));
+        }
+        
+        vTaskDelay( pdMS_TO_TICKS ( LORAWAN_APP_TX_DUTYCYCLE_MS ) );
+    }
+    
+    
+    return status;
+}
+
+
+static LoRaMacStatus_t prvConfigure( void )
 {
     MibRequestConfirm_t mibReq;
     LoRaMacStatus_t status;
@@ -494,7 +449,7 @@ static LoRaMacStatus_t configure( void )
     if( status == LORAMAC_STATUS_OK )
     {
         mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-        mibReq.Param.SystemMaxRxError = 50;
+        mibReq.Param.SystemMaxRxError = 20;
         status = LoRaMacMibSetRequestConfirm( &mibReq );
     }
 
@@ -502,204 +457,244 @@ static LoRaMacStatus_t configure( void )
 }
 
 
-/*!
- * \brief   Prepares the payload of the frame
- *
- * \retval  [1: frame could be send, 0: error]
- */
-static LoRaMacStatus_t sendFrame( bool confirmed )
+static size_t prvSend( uint8_t port, uint8_t *message, size_t messageSize, bool confirmed )
 {
     McpsReq_t mcpsReq;
     LoRaMacTxInfo_t txInfo;
-    uint32_t appDataSize;
     LoRaMacStatus_t status;
-
-    message[0] = 0xFF;
-    appDataSize = 1;
-
-    if( LoRaMacQueryTxPossible( appDataSize, &txInfo ) != LORAMAC_STATUS_OK )
-    {
-        // Send empty frame in order to flush MAC commands
-        configPRINTF(("TX not possible for data size.\n"));
-        mcpsReq.Type = MCPS_UNCONFIRMED;
-        mcpsReq.Req.Unconfirmed.fBuffer = NULL;
-        mcpsReq.Req.Unconfirmed.fBufferSize = 0;
-        mcpsReq.Req.Unconfirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
-    }
-    else
+    size_t bytesSent = 0;
+    uint32_t ulDutyCycleTimeMS = 0;
+    LoRaMacResponse_t response = { 0 };
+    
+    status = LoRaMacQueryTxPossible( messageSize, &txInfo );
+    
+    if(  status == LORAMAC_STATUS_OK )
     {
         if( confirmed == false )
         {
             mcpsReq.Type = MCPS_UNCONFIRMED;
-            mcpsReq.Req.Unconfirmed.fPort = LORAWAN_APP_PORT;
+            mcpsReq.Req.Unconfirmed.fPort = port;
             mcpsReq.Req.Unconfirmed.fBuffer = message;
-            mcpsReq.Req.Unconfirmed.fBufferSize = appDataSize;
+            mcpsReq.Req.Unconfirmed.fBufferSize = messageSize;
             mcpsReq.Req.Unconfirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
         }
         else
         {
             mcpsReq.Type = MCPS_CONFIRMED;
-            mcpsReq.Req.Confirmed.fPort = LORAWAN_APP_PORT;
+            mcpsReq.Req.Confirmed.fPort = port;
             mcpsReq.Req.Confirmed.fBuffer = message;
-            mcpsReq.Req.Confirmed.fBufferSize = appDataSize;
+            mcpsReq.Req.Confirmed.fBufferSize = messageSize;
             mcpsReq.Req.Confirmed.NbTrials = 8;
             mcpsReq.Req.Confirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
         }
-    }
-
-    status = LoRaMacMcpsRequest( &mcpsReq );
-
-    configPRINTF(( "MCPS-Request status : %s\n", MacStatusStrings[status] ));
-
-    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
-    {
-        configPRINTF(( "TX: Duty cycle limit reached.\n"));
-    }
-
-    return status;
-}
-
-static void prvLorawanClassATask( void *params )
-{
-    LoRaMacStatus_t status;
-    uint32_t dutyCycleTime = 0;
-    MibRequestConfirm_t mibReq;
-
-    BoardInitMcu();
-
-    LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
-    LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
-    LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
-    LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
-    LoRaMacCallbacks.GetBatteryLevel = getBatteryLevel;
-    LoRaMacCallbacks.MacProcessNotify = OnMacProcessNotify;
-
-    configPRINTF(( "###### ===== Class A demo application v1.0.0 ==== ######\n\n" ));
-
-    status = LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_US915);
-    if( status == LORAMAC_STATUS_OK )
-    {
-        configPRINTF(("Lora MAC initialization successful.\r\n"));
-    }
-    else
-    {
-        configPRINTF(("Lora MAC initialization failed, status = %d.\r\n", status));
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        status = configure();
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        configPRINTF(( "LoRaMAC configuration succeeded.\n" ));
-    }
-    else
-    {
-        configPRINTF(( "LoraMAC configuration failed, status = %d.\n", status ));
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        status =  LoRaMacStart( );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        configPRINTF(( "LoraMAC start successful. \r\n" ));
-    }
-    else
-    {
-        configPRINTF(( "LoRaMAC start failed, status = %d.\n", status ));
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        TimerInit( &packetTimer, OnPacketTimerEvent );
-
-        mibReq.Type = MIB_NETWORK_ACTIVATION;
-        status = LoRaMacMibGetRequestConfirm( &mibReq );
+        
+        do {
+            
+            status = LoRaMacMcpsRequest( &mcpsReq );
+            
+            if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+            {
+                ulDutyCycleTimeMS = mcpsReq.ReqReturn.DutyCycleWaitTime;
+                configPRINTF(( "Duty cycle restriction. Wait ~%lu second(s) before sending uplink.\n", ( ulDutyCycleTimeMS / 1000 ) ));
+                vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
+            }
+        } while ( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED );
+        
         if( status == LORAMAC_STATUS_OK )
         {
-            if( mibReq.Param.NetworkActivation == ACTIVATION_TYPE_NONE )
-            {
-                configPRINTF(("Initiating join. \r\n"));
-                DeviceState = DEVICE_STATE_JOIN;
+                xQueueReceive( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+                if( ( response.type == LORAMAC_RESPONSE_TYPE_MCPS ) && ( response.resp.mcpsConfirm.Status == LORAMAC_EVENT_INFO_STATUS_OK ) )
+                {
+                   if ( ( response.resp.mcpsConfirm.McpsRequest == MCPS_UNCONFIRMED ) || 
+                        ( ( response.resp.mcpsConfirm.McpsRequest == MCPS_CONFIRMED ) && ( response.resp.mcpsConfirm.AckReceived ) ) )
+                    {
+                        bytesSent = messageSize;
+                    }
+                }
             }
-            else
-            {
-                configPRINTF(("Already joined.Sending data \r\n"));
-                DeviceState = DEVICE_STATE_SEND;
-            }
-        }
-        else
-        {
-            configPRINTF(("Error while fetching activation, status = %d.", status ));
-        }
+    }
+    else
+    {
+         // Send empty frame in order to flush MAC commands
+        configPRINTF(( "TX not possible for data size %d.\n", messageSize ));
+        
+        mcpsReq.Type = MCPS_UNCONFIRMED;
+        mcpsReq.Req.Unconfirmed.fBuffer = NULL;
+        mcpsReq.Req.Unconfirmed.fBufferSize = 0;
+        mcpsReq.Req.Unconfirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
+        
+        ( void ) LoRaMacMcpsRequest( &mcpsReq );
     }
 
+    return bytesSent;
+}
 
-    if( status == LORAMAC_STATUS_OK )
+static size_t prvReceiveFrom( uint8_t * port, uint8_t *buffer, size_t bufferSize, size_t timeoutMS )
+{
+    
+    LoRaMacMessage_t message;
+    TickType_t ticksToWait = pdMS_TO_TICKS( timeoutMS );
+    size_t bytesReceived = 0, received = 0;
+    uint8_t recvBuffer[ LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE ] ;
+    
+    received = xMessageBufferReceive( xLoRaMacMessageBuffer, recvBuffer, ( bufferSize + LORAWAN_APP_PORT_SIZE ), ticksToWait );
+    
+    if( received > 0 )
+    {
+        *port = recvBuffer[0];
+        bytesReceived = ( received -  LORAWAN_APP_PORT_SIZE );
+        memcpy(  buffer, ( recvBuffer + LORAWAN_APP_PORT_SIZE ), bytesReceived );
+    }
+
+    return bytesReceived;
+}
+
+static void prvRadioTask( void * params )
+{
+    uint32_t ulNotifiedValue;
+    for( ;; )
     {
 
-        for( ;; )
+        ulNotifiedValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+        while( ulNotifiedValue > 0 )
         {
-            xSemaphoreTake(wakeupLoRaTask, portMAX_DELAY);
             // Process Radio IRQ.
             if( Radio.IrqProcess != NULL )
             {
                 Radio.IrqProcess( );
             }
 
-            //Process Lora mac events.
-            LoRaMacProcess( );
+            //Process Lora mac events based on Radio events.
+            LoRaMacProcess();
 
-            switch( DeviceState )
+            ulNotifiedValue--;
+        }
+     }
+
+     vTaskDelete( NULL );
+}
+
+static void prvLorawanClassATask( void *params )
+{
+    LoRaMacStatus_t status;
+    MibRequestConfirm_t mibReq;
+    uint8_t uplink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
+    uint8_t downlink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
+    size_t uplinkSize = 0, downlinkSize = 0;
+    size_t bytesTransferred;
+    uint8_t port;
+
+    LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
+    LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
+    LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
+    LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
+    LoRaMacCallbacks.GetBatteryLevel = getBatteryLevel;
+    LoRaMacCallbacks.MacProcessNotify = NULL;
+
+    configPRINTF(( "###### ===== Class A demo application v1.0.0 ==== ######\n\n" ));
+
+    status = LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_US915);
+    
+    if( status == LORAMAC_STATUS_OK )
+    {
+        Radio.SetEventNotify( &OnRadioNotify );
+        configPRINTF(("LoRa MAC stack initialized.\r\n"));
+    }
+    else
+    {
+        configPRINTF(("LoRa MAC initialization failed, status = %d.\r\n", status));
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        status = prvConfigure( );
+
+        if( status != LORAMAC_STATUS_OK )
+        {
+            configPRINTF(( "LoRa MAC configuration failed, status = %d.\n", status ));
+        }
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        status =  LoRaMacStart( );
+        if( status == LORAMAC_STATUS_OK )
+        {
+            configPRINTF(( "Lora MAC started. \r\n" ));
+        }
+        else
+        {
+            configPRINTF(( "LoRa MAC start failed, status = %d.\n", status ));
+        }
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_NETWORK_ACTIVATION;
+        status = LoRaMacMibGetRequestConfirm( &mibReq );
+        if( status == LORAMAC_STATUS_OK )
+        {
+            if( mibReq.Param.NetworkActivation == ACTIVATION_TYPE_NONE )
             {
-
-            case DEVICE_STATE_JOIN:
-                status = prxJoinNetwork();
-                if( status == LORAMAC_STATUS_OK )
+                status = prvOTAAJoinNetwork();
+                if( status != LORAMAC_STATUS_OK )
                 {
-                    configPRINTF(("Join Initiated.\n"));
-                    DeviceState = DEVICE_STATE_SLEEP;
+                    configPRINTF(( "Failed to join LoRaWAN network.\n" ));
                 }
-                else
-                {
-                    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
-                    {
-                        DeviceState = DEVICE_STATE_CYCLE;
-                    }
-                }
-
-                break;
-            case DEVICE_STATE_SEND:
-                status = sendFrame( LORAWAN_SEND_CONFIRMED_MESSAGES );
-                if( status == LORAMAC_STATUS_OK )
-                {
-                    DeviceState = DEVICE_STATE_SLEEP;
-                }
-                else
-                {
-                    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
-                    {
-                        DeviceState = DEVICE_STATE_CYCLE;
-                    }
-                }
-
-                break;
-            case DEVICE_STATE_CYCLE:
-                // Schedule next packet transmission
-                DeviceState = DEVICE_STATE_SLEEP;
-                dutyCycleTime = LORAWAN_APP_TX_DUTYCYCLE_MS + randr( -LORAWAN_APP_TX_DUTYCYCLE_RND_MS, LORAWAN_APP_TX_DUTYCYCLE_RND_MS );
-                // Schedule next packet transmission
-                TimerSetValue( &packetTimer, dutyCycleTime );
-                TimerStart( &packetTimer );
-                break;
-            default:
-                break;
             }
+            else
+            {
+                configPRINTF(( "Device already joined to LoRaWAN network.\n" ));
+            }
+        }
+        else
+        {
+            configPRINTF(( "Error while fetching activation status, error = %d\n.", status ));
+        }
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        
+        /**
+         * Task loops forever and sends periodic uplink byte 0xFF. It then blocks for a period of time
+         * to receive any packets downlink and display any data available to the terminal.
+         */
+         
+        uplink[0] = 0xFF;
+        uplinkSize = 1;
+
+        for( ;; )
+        {
+           
+           bytesTransferred = prvSend( LORAWAN_APP_PORT, uplink, uplinkSize, LORAWAN_SEND_CONFIRMED_MESSAGES );
+           if( bytesTransferred  == uplinkSize )
+           {
+               configPRINTF(( "Sent uplink message of size %d bytes.\n", bytesTransferred ));
+               
+           }
+           else
+           {
+               /**
+                * Handling of partial bytes sent due to datarate restrictions etc.. 
+                */
+               configPRINTF(( "Failed to send all the bytes uplink, sent %d bytes.\n", bytesTransferred ));
+           }
+           
+           
+           bytesTransferred = prvReceiveFrom( &port, downlink, downlinkSize,  LORAWAN_RECEIVE_TIMEOUT_MS );
+           if( bytesTransferred > 0 )
+           {
+               configPRINTF(( "Received downlink message, port = %d, size = %d bytes:\n", port, bytesTransferred ));
+               PrintHexBuffer( downlink, bytesTransferred );
+           }
+           
+           /**
+            * Wait for atleast dutycyle time + a random jitter before sending the next uplink message.
+            */
+           
+           vTaskDelay( LORAWAN_APP_TX_DUTYCYCLE_MS + LORAWAN_APP_TX_DUTYCYCLE_RND_MS ); 
 
         }
     }
@@ -713,10 +708,13 @@ static void prvLorawanClassATask( void *params )
  * *****************************************************************************************/ 
 void main( void )
 {
-    wakeupLoRaTask = xSemaphoreCreateBinary();
-    if( wakeupLoRaTask != NULL )
+
+    BoardInitMcu();
+    xLoRaMacResponseQueue = xQueueCreate( LORAWAN_MAX_QUEUED_RESPONSES, sizeof( LoRaMacResponse_t ) );
+    xLoRaMacMessageBuffer = xMessageBufferCreate( ( LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE + sizeof( size_t ) ) * 10 ); 
+    if( ( xLoRaMacResponseQueue != NULL ) && ( xLoRaMacMessageBuffer != NULL ) ) 
     {
-        xSemaphoreGive( wakeupLoRaTask );
-        xTaskCreate( prvLorawanClassATask, "LoRa", configMINIMAL_STACK_SIZE * 40 , NULL, tskIDLE_PRIORITY + 1, &loRaWANTask );
+        xTaskCreate( prvRadioTask, "LoRaRadio", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY + 5, &xRadioTask );
+        xTaskCreate( prvLorawanClassATask, "LoRa", configMINIMAL_STACK_SIZE * 40 , NULL, tskIDLE_PRIORITY + 1, &xLoRaTask );
     }
 }
