@@ -3,6 +3,7 @@
 #include "timer.h"
 #include "LoRaMac.h"
 #include "board.h"
+#include "utilities.h"
 #include "radio.h"
 #include "message_buffer.h"
 #include "queue.h"
@@ -26,7 +27,11 @@
  */
 #define LORAWAN_MAX_MESG_SIZE                     242
 
+/**
+ * @brief LoRa MAC layer port size. 
+ */
 #define LORAWAN_APP_PORT_SIZE                     ( 1 )
+
 /**
  * @brief LoRa MAC layer port used for communication. Downlink messages
  * should be send on this port number.
@@ -47,7 +52,7 @@
  * @brief Maximum join attempts before giving up. LoRa tries a range of channels
  * within the band to send join requests for the first time.
  */
-#define LORAWAN_MAX_JOIN_ATTEMPTS                    ( 1000 )
+#define LORAWAN_MAX_JOIN_ATTEMPTS                      ( 1000 )
 
 /**
  * @brief Should send confirmed messages (with acknowledgment) or not.
@@ -59,17 +64,17 @@
  * (RX1 + RX2) window duration for low latency downlink.
  */
 
-#define LORAWAN_RECEIVE_TIMEOUT_MS                      ( 10000 )   
+#define LORAWAN_RECEIVE_TIMEOUT_MS                      ( 5000 )   
 
 /**
  * @brief Defines the application data transmission duty cycle time in milliseconds.
  */
-#define LORAWAN_APP_TX_DUTYCYCLE_MS                        ( 5000 )
+#define LORAWAN_APP_TX_DUTYCYCLE_MS                     ( 5000 )
 
 /**
- * @brief Defines a random delay for application data transmission duty cycle in milliseconds.
+ * @brief Defines a random jitter bound for application data transmission duty cycle in milliseconds.
  */
-#define LORAWAN_APP_TX_DUTYCYCLE_RND_MS                     ( 1000 )
+#define LORAWAN_APP_TX_DUTYCYCLE_RND_MS                  ( 1000 )
 
 /**
  * @brief EUI and keys that needs to be provisioned for device identity and security.
@@ -166,34 +171,37 @@ static const char* EventInfoStatusStrings[] =
         "Beacon not found"               // LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND
 };
 
-
+/**
+ * @brief The callbacks registered with LoRaMAC stack layer. \
+ */
 static LoRaMacPrimitives_t LoRaMacPrimitives;
 
 static LoRaMacCallback_t LoRaMacCallbacks;
 
 /**
- * @brief Main loRaWAN application task handle.
+ * @brief Main LoRaWAN Class A application task handle.
  */
-static TaskHandle_t xLoRaTask;
+static TaskHandle_t xLoRaWANTask;
 
 /**
- * @brief Radio task which is a high priority task used for deffered processing of 
- * radio interrupts.
+ * @brief This task runs the LoRaMAC stack processing, based on
+ * events received from radio interrupts or other timer expired 
+ * events.
  */
-static TaskHandle_t xRadioTask;
+static TaskHandle_t xLoRaMacTask;
 
 /**
  * @brief Queue used to wait for responses from LoRaMAC stack
  */
 static QueueHandle_t xLoRaMacResponseQueue;
 
-static MessageBufferHandle_t xLoRaMacMessageBuffer;
-
 /**
- * @brief Packet timer used for controlled transmission of packets, thereby
- * confirming to duty cycle restrictions.
+ * @brief Buffer used to store the downlink messages received from the
+ * LoRaMAC stack. User applications can do a blocking receiveFrom operation for a timeout
+ * value, usually after a successful uplink or whenever downlink is expected.
+ * 
  */
-static TimerEvent_t packetTimer;
+static MessageBufferHandle_t xLoRaMacMessageBuffer;
 
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
@@ -202,11 +210,10 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
     
     configPRINTF(( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[mcpsConfirm->Status] ));
 
-    response.type = LORAMAC_RESPONSE_TYPE_MLME;
+    response.type = LORAMAC_RESPONSE_TYPE_MCPS;
     memcpy( &response.resp.mcpsConfirm, mcpsConfirm, sizeof( MlmeConfirm_t ) );
     
-    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY ); 
-   
+    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
 }
 
 /*!
@@ -227,7 +234,7 @@ static void PrintHexBuffer( uint8_t *buffer, uint8_t size )
             newline = 0;
         }
 
-        configPRINTF(( "%02X ", buffer[i] ));
+        configPRINTF(( "%02X\n", buffer[i] ));
 
         if( ( ( i + 1 ) % 16 ) == 0 )
         {
@@ -242,7 +249,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
     
     uint8_t  buffer[ LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE ];
-    configPRINTF(( "\nMCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status] ));
+    configPRINTF(( "MCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status] ));
     
    if( ( mcpsIndication->Status ==  LORAMAC_EVENT_INFO_STATUS_OK ) && 
        ( mcpsIndication->RxData == true ) )
@@ -285,7 +292,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
     xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY ); 
 }
 
-static void OnRadioNotify( bool fromISR )
+static void onRadioNotify( bool fromISR )
 {
     BaseType_t xHigherPriorityTaskWoken;
 
@@ -293,17 +300,22 @@ static void OnRadioNotify( bool fromISR )
     {
         xHigherPriorityTaskWoken = pdFALSE;
 
-        vTaskNotifyGiveFromISR( xRadioTask, &xHigherPriorityTaskWoken );
+        vTaskNotifyGiveFromISR( xLoRaMacTask, &xHigherPriorityTaskWoken );
 
         portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
     }
     else
     {
-        xTaskNotifyGive( xRadioTask );
+        xTaskNotifyGive( xLoRaMacTask );
     }
 }
 
-uint8_t  getBatteryLevel( void )
+static void onMacNotify( void )
+{
+    xTaskNotifyGive( xLoRaMacTask );
+}
+
+static uint8_t  getBatteryLevel( void )
 {
     return 0;
 }
@@ -449,7 +461,7 @@ static LoRaMacStatus_t prvConfigure( void )
     if( status == LORAMAC_STATUS_OK )
     {
         mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-        mibReq.Param.SystemMaxRxError = 20;
+        mibReq.Param.SystemMaxRxError = 50;
         status = LoRaMacMibSetRequestConfirm( &mibReq );
     }
 
@@ -511,7 +523,7 @@ static size_t prvSend( uint8_t port, uint8_t *message, size_t messageSize, bool 
                         bytesSent = messageSize;
                     }
                 }
-            }
+        }
     }
     else
     {
@@ -549,9 +561,10 @@ static size_t prvReceiveFrom( uint8_t * port, uint8_t *buffer, size_t bufferSize
     return bytesReceived;
 }
 
-static void prvRadioTask( void * params )
+static void prvLoRaMacTask( void * params )
 {
     uint32_t ulNotifiedValue;
+    
     for( ;; )
     {
 
@@ -581,16 +594,17 @@ static void prvLorawanClassATask( void *params )
     MibRequestConfirm_t mibReq;
     uint8_t uplink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
     uint8_t downlink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
-    size_t uplinkSize = 0, downlinkSize = 0;
+    size_t uplinkSize = 0, downlinkSize = LORAWAN_MAX_MESG_SIZE;
     size_t bytesTransferred;
     uint8_t port;
+    uint32_t dutyCycleInterval;
 
     LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
     LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
     LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
     LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
     LoRaMacCallbacks.GetBatteryLevel = getBatteryLevel;
-    LoRaMacCallbacks.MacProcessNotify = NULL;
+    LoRaMacCallbacks.MacProcessNotify = onMacNotify;
 
     configPRINTF(( "###### ===== Class A demo application v1.0.0 ==== ######\n\n" ));
 
@@ -598,7 +612,7 @@ static void prvLorawanClassATask( void *params )
     
     if( status == LORAMAC_STATUS_OK )
     {
-        Radio.SetEventNotify( &OnRadioNotify );
+        Radio.SetEventNotify( &onRadioNotify );
         configPRINTF(("LoRa MAC stack initialized.\r\n"));
     }
     else
@@ -658,9 +672,11 @@ static void prvLorawanClassATask( void *params )
     {
         
         /**
-         * Task loops forever and sends periodic uplink byte 0xFF. It then blocks for a period of time
-         * to receive any packets downlink and display any data available to the terminal.
+         * Task loops forever and sends periodic uplink byte 0xFF. It then blocks for a period of at least
+         * receive window time for any packets downlink and display data received onto the terminal.
          */
+         
+        configPRINTF(( "Sending and receiving messages over LoRaWAN.\n" ));
          
         uplink[0] = 0xFF;
         uplinkSize = 1;
@@ -668,33 +684,36 @@ static void prvLorawanClassATask( void *params )
         for( ;; )
         {
            
-           bytesTransferred = prvSend( LORAWAN_APP_PORT, uplink, uplinkSize, LORAWAN_SEND_CONFIRMED_MESSAGES );
-           if( bytesTransferred  == uplinkSize )
-           {
-               configPRINTF(( "Sent uplink message of size %d bytes.\n", bytesTransferred ));
-               
-           }
-           else
-           {
-               /**
-                * Handling of partial bytes sent due to datarate restrictions etc.. 
-                */
-               configPRINTF(( "Failed to send all the bytes uplink, sent %d bytes.\n", bytesTransferred ));
-           }
+            bytesTransferred = prvSend( LORAWAN_APP_PORT, uplink, uplinkSize, LORAWAN_SEND_CONFIRMED_MESSAGES );
+            if( bytesTransferred == uplinkSize )
+            {
+                configPRINTF(( "Sent uplink message of size %d bytes.\n", bytesTransferred ));  
+            }
+            else
+            {
+                /**
+                 * Handle partial bytes sent due to data rate restrictions. 
+                 */
+                configPRINTF(( "Failed to send all the bytes uplink, sent %d bytes.\n", bytesTransferred ));
+            }
+
+            configPRINTF(( "Wait for %d seconds to receive any downlink data.\n", ( LORAWAN_RECEIVE_TIMEOUT_MS / 1000 ) ));
            
+            bytesTransferred = prvReceiveFrom( &port, downlink, downlinkSize,  LORAWAN_RECEIVE_TIMEOUT_MS );
+            if( bytesTransferred > 0 )
+            {
+                configPRINTF(( "Received downlink message, port = %d, size = %d bytes:\n", port, bytesTransferred ));
+                PrintHexBuffer( downlink, bytesTransferred );
+            }
            
-           bytesTransferred = prvReceiveFrom( &port, downlink, downlinkSize,  LORAWAN_RECEIVE_TIMEOUT_MS );
-           if( bytesTransferred > 0 )
-           {
-               configPRINTF(( "Received downlink message, port = %d, size = %d bytes:\n", port, bytesTransferred ));
-               PrintHexBuffer( downlink, bytesTransferred );
-           }
+            /**
+             * Wait for atleast dutycyle time +/- a random jitter value before sending the next uplink message.
+             */
+            dutyCycleInterval = LORAWAN_APP_TX_DUTYCYCLE_MS + randr( -LORAWAN_APP_TX_DUTYCYCLE_RND_MS, LORAWAN_APP_TX_DUTYCYCLE_RND_MS );
+            
+            configPRINTF(( "Wait for duty cycle time (%d seconds) before sending next uplink data.\n", ( dutyCycleInterval / 1000 ) ));
            
-           /**
-            * Wait for atleast dutycyle time + a random jitter before sending the next uplink message.
-            */
-           
-           vTaskDelay( LORAWAN_APP_TX_DUTYCYCLE_MS + LORAWAN_APP_TX_DUTYCYCLE_RND_MS ); 
+            vTaskDelay( pdMS_TO_TICKS ( dutyCycleInterval ) ); 
 
         }
     }
@@ -714,7 +733,7 @@ void main( void )
     xLoRaMacMessageBuffer = xMessageBufferCreate( ( LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE + sizeof( size_t ) ) * 10 ); 
     if( ( xLoRaMacResponseQueue != NULL ) && ( xLoRaMacMessageBuffer != NULL ) ) 
     {
-        xTaskCreate( prvRadioTask, "LoRaRadio", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY + 5, &xRadioTask );
-        xTaskCreate( prvLorawanClassATask, "LoRa", configMINIMAL_STACK_SIZE * 40 , NULL, tskIDLE_PRIORITY + 1, &xLoRaTask );
+        xTaskCreate( prvLoRaMacTask, "LoRaMac", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY + 5, &xLoRaMacTask );
+        xTaskCreate( prvLorawanClassATask, "LoRaWAN", configMINIMAL_STACK_SIZE * 40 , NULL, tskIDLE_PRIORITY + 1, &xLoRaWANTask );
     }
 }
