@@ -1,6 +1,5 @@
 #include "FreeRTOS.h"
 #include "task.h"
-#include "timer.h"
 #include "LoRaMac.h"
 #include "board.h"
 #include "utilities.h"
@@ -11,37 +10,38 @@
 /*
  * @brief Default data rate used for uplink messages.
  */
-#define LORAWAN_DEFAULT_DATARATE           DR_0
+#define LORAWAN_DEFAULT_DATARATE           ( DR_0 )
 
 /**
  * @brief Can be used to enable/disable adaptive data rate and
  * frequency hopping.
  */
-#define LORAWAN_ADR_ON                     1
+#define LORAWAN_ADR_ON                     ( 1 )
 
 /**
- * @brief Defines maximum message size for transmission.
+ * @brief Maximum payload length defined for LoRaWAN.
+ *
  * Applications should take care of duty cycle restrictions and fair access policies for
  * each regions while determining the size of message to be transmitted. Larger messages can
- * lead to longer air-time for radio, and this can lead to radio using up all the duty cycle limit.
+ * lead to longer air-time for radio, and this can lead to radio using up all of the duty cycle limit.
  */
-#define LORAWAN_MAX_MESG_SIZE              242
+#define LORAWAN_MAX_PAYLOAD_LENGTH         ( 242 )
 
 /**
- * @brief LoRa MAC layer port size.
+ * @brief Mac layer port size defined for LoRaWAN.
  */
-#define LORAWAN_APP_PORT_SIZE              ( 1 )
+#define LORAWAN_PORT_SIZE                  ( 1 )
 
 /**
  * @brief LoRa MAC layer port used for communication. Downlink messages
  * should be send on this port number.
  */
-#define LORAWAN_APP_PORT                   2
+#define LORAWAN_APP_PORT                   ( 2 )
 
 /**
  * @brief Flag for LoRaMAC stack to tell if its a public network such as TTN.
  */
-#define LORAWAN_PUBLIC_NETWORK             1
+#define LORAWAN_PUBLIC_NETWORK             ( 1 )
 
 /**
  * @brief Queue size for LoRaMAC response queue.
@@ -108,14 +108,6 @@ typedef struct LoRaMacResponse
         McpsConfirm_t mcpsConfirm;
     } resp;
 } LoRaMacResponse_t;
-
-typedef struct LoRaMacMessage
-{
-    uint8_t port;
-    size_t length;
-    uint8_t buffer[ LORAWAN_MAX_MESG_SIZE ];
-} LoRaMacMessage_t;
-
 
 /**
  * @brief Strings for denoting status responses from LoRaMAC layer.
@@ -204,17 +196,6 @@ static QueueHandle_t xLoRaMacResponseQueue;
  */
 static MessageBufferHandle_t xLoRaMacMessageBuffer;
 
-static void McpsConfirm( McpsConfirm_t * mcpsConfirm )
-{
-    LoRaMacResponse_t response = { 0 };
-
-    configPRINTF( ( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[ mcpsConfirm->Status ] ) );
-
-    response.type = LORAMAC_RESPONSE_TYPE_MCPS;
-    memcpy( &response.resp.mcpsConfirm, mcpsConfirm, sizeof( MlmeConfirm_t ) );
-
-    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
-}
 
 /*!
  * Prints the provided buffer in HEX
@@ -246,10 +227,21 @@ static void PrintHexBuffer( uint8_t * buffer,
     configPRINTF( ( "\n" ) );
 }
 
+static void McpsConfirm( McpsConfirm_t * mcpsConfirm )
+{
+    LoRaMacResponse_t response = { 0 };
+
+    configPRINTF( ( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[ mcpsConfirm->Status ] ) );
+
+    response.type = LORAMAC_RESPONSE_TYPE_MCPS;
+    memcpy( &response.resp.mcpsConfirm, mcpsConfirm, sizeof( McpsConfirm_t ) );
+    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+}
+
 
 static void McpsIndication( McpsIndication_t * mcpsIndication )
 {
-    uint8_t buffer[ LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE ];
+    uint8_t buffer[ LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE ];
 
     configPRINTF( ( "MCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status ] ) );
 
@@ -257,9 +249,9 @@ static void McpsIndication( McpsIndication_t * mcpsIndication )
         ( mcpsIndication->RxData == true ) )
     {
         buffer[ 0 ] = mcpsIndication->Port;
-        memcpy( ( buffer + LORAWAN_APP_PORT_SIZE ), mcpsIndication->Buffer, mcpsIndication->BufferSize );
+        memcpy( ( buffer + LORAWAN_PORT_SIZE ), mcpsIndication->Buffer, mcpsIndication->BufferSize );
 
-        xMessageBufferSend( xLoRaMacMessageBuffer, buffer, ( mcpsIndication->BufferSize + LORAWAN_APP_PORT_SIZE ), portMAX_DELAY );
+        xMessageBufferSend( xLoRaMacMessageBuffer, buffer, ( mcpsIndication->BufferSize + LORAWAN_PORT_SIZE ), portMAX_DELAY );
     }
 
     /* Check Multicast */
@@ -286,11 +278,10 @@ static void MlmeConfirm( MlmeConfirm_t * mlmeConfirm )
     LoRaMacEventInfoStatus_t status = mlmeConfirm->Status;
     LoRaMacResponse_t response;
 
-    response.type = LORAMAC_RESPONSE_TYPE_MLME;
-    memcpy( &response.resp.mlmeConfirm, mlmeConfirm, sizeof( MlmeConfirm_t ) );
-
     configPRINTF( ( "MLME CONFIRM  status: %s\n", EventInfoStatusStrings[ status ] ) );
 
+    response.type = LORAMAC_RESPONSE_TYPE_MLME;
+    memcpy( &response.resp.mlmeConfirm, mlmeConfirm, sizeof( MlmeConfirm_t ) );
     xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
 }
 
@@ -321,6 +312,98 @@ static uint8_t getBatteryLevel( void )
 {
     return 0;
 }
+
+static void prvLoRaMacTask( void * params )
+{
+    uint32_t ulNotifiedValue;
+
+    for( ; ; )
+    {
+        ulNotifiedValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+        while( ulNotifiedValue > 0 )
+        {
+            /* Process Radio IRQ. */
+            if( Radio.IrqProcess != NULL )
+            {
+                Radio.IrqProcess();
+            }
+
+            /*Process Lora mac events based on Radio events. */
+            LoRaMacProcess();
+
+            ulNotifiedValue--;
+        }
+    }
+
+    vTaskDelete( NULL );
+}
+
+
+static LoRaMacStatus_t prvConfigure( void )
+{
+    MibRequestConfirm_t mibReq;
+    LoRaMacStatus_t status;
+    uint8_t devEUI[ 8 ] = DEV_EUI;
+    uint8_t joinEUI[ 8 ] = JOIN_EUI;
+    uint8_t appKey[ 16 ] = APP_NWK_KEY;
+
+    mibReq.Type = MIB_DEV_EUI;
+    mibReq.Param.DevEui = devEUI;
+    status = LoRaMacMibSetRequestConfirm( &mibReq );
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_JOIN_EUI;
+        mibReq.Param.JoinEui = joinEUI;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_APP_KEY;
+        mibReq.Param.AppKey = appKey;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_NWK_KEY;
+        mibReq.Param.AppKey = appKey;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_PUBLIC_NETWORK;
+        mibReq.Param.EnablePublicNetwork = LORAWAN_PUBLIC_NETWORK;
+        LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_ADR;
+        mibReq.Param.AdrEnable = LORAWAN_ADR_ON;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    #if defined( REGION_EU868 ) || defined( REGION_RU864 ) || defined( REGION_CN779 ) || defined( REGION_EU433 )
+        if( status == LORAMAC_STATUS_OK )
+        {
+            status = LoRaMacTestSetDutyCycleOn( LORAWAN_DUTYCYCLE_ON );
+        }
+    #endif
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
+        mibReq.Param.SystemMaxRxError = 50;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    return status;
+}
+
 
 /**
  * @brief Join to a LORAWAN network using OTAA join mechanism..
@@ -403,72 +486,6 @@ static LoRaMacStatus_t prvOTAAJoinNetwork( void )
     return status;
 }
 
-
-static LoRaMacStatus_t prvConfigure( void )
-{
-    MibRequestConfirm_t mibReq;
-    LoRaMacStatus_t status;
-    uint8_t devEUI[ 8 ] = DEV_EUI;
-    uint8_t joinEUI[ 8 ] = JOIN_EUI;
-    uint8_t appKey[ 16 ] = APP_NWK_KEY;
-
-    mibReq.Type = MIB_DEV_EUI;
-    mibReq.Param.DevEui = devEUI;
-    status = LoRaMacMibSetRequestConfirm( &mibReq );
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_JOIN_EUI;
-        mibReq.Param.JoinEui = joinEUI;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_APP_KEY;
-        mibReq.Param.AppKey = appKey;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_NWK_KEY;
-        mibReq.Param.AppKey = appKey;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_PUBLIC_NETWORK;
-        mibReq.Param.EnablePublicNetwork = LORAWAN_PUBLIC_NETWORK;
-        LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_ADR;
-        mibReq.Param.AdrEnable = LORAWAN_ADR_ON;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    #if defined( REGION_EU868 ) || defined( REGION_RU864 ) || defined( REGION_CN779 ) || defined( REGION_EU433 )
-        if( status == LORAMAC_STATUS_OK )
-        {
-            status = LoRaMacTestSetDutyCycleOn( LORAWAN_DUTYCYCLE_ON );
-        }
-    #endif
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-        mibReq.Param.SystemMaxRxError = 50;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    return status;
-}
-
-
 static size_t prvSend( uint8_t port,
                        uint8_t * message,
                        size_t messageSize,
@@ -531,7 +548,7 @@ static size_t prvSend( uint8_t port,
     }
     else
     {
-        /* Send empty frame in order to flush MAC commands */
+        /* Send empty frame in order to flush any pending MAC commands */
         configPRINTF( ( "TX not possible for data size %d.\n", messageSize ) );
 
         mcpsReq.Type = MCPS_UNCONFIRMED;
@@ -550,56 +567,29 @@ static size_t prvReceiveFrom( uint8_t * port,
                               size_t bufferSize,
                               size_t timeoutMS )
 {
-    LoRaMacMessage_t message;
     TickType_t ticksToWait = pdMS_TO_TICKS( timeoutMS );
     size_t bytesReceived = 0, received = 0;
-    uint8_t recvBuffer[ LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE ];
+    uint8_t recvBuffer[ LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE ];
 
-    received = xMessageBufferReceive( xLoRaMacMessageBuffer, recvBuffer, ( bufferSize + LORAWAN_APP_PORT_SIZE ), ticksToWait );
+    received = xMessageBufferReceive( xLoRaMacMessageBuffer, recvBuffer, ( bufferSize + LORAWAN_PORT_SIZE ), ticksToWait );
 
     if( received > 0 )
     {
         *port = recvBuffer[ 0 ];
-        bytesReceived = ( received - LORAWAN_APP_PORT_SIZE );
-        memcpy( buffer, ( recvBuffer + LORAWAN_APP_PORT_SIZE ), bytesReceived );
+        bytesReceived = ( received - LORAWAN_PORT_SIZE );
+        memcpy( buffer, ( recvBuffer + LORAWAN_PORT_SIZE ), bytesReceived );
     }
 
     return bytesReceived;
-}
-
-static void prvLoRaMacTask( void * params )
-{
-    uint32_t ulNotifiedValue;
-
-    for( ; ; )
-    {
-        ulNotifiedValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-
-        while( ulNotifiedValue > 0 )
-        {
-            /* Process Radio IRQ. */
-            if( Radio.IrqProcess != NULL )
-            {
-                Radio.IrqProcess();
-            }
-
-            /*Process Lora mac events based on Radio events. */
-            LoRaMacProcess();
-
-            ulNotifiedValue--;
-        }
-    }
-
-    vTaskDelete( NULL );
 }
 
 static void prvLorawanClassATask( void * params )
 {
     LoRaMacStatus_t status;
     MibRequestConfirm_t mibReq;
-    uint8_t uplink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
-    uint8_t downlink[ LORAWAN_MAX_MESG_SIZE ] = { 0 };
-    size_t uplinkSize = 0, downlinkSize = LORAWAN_MAX_MESG_SIZE;
+    uint8_t uplink[ LORAWAN_MAX_PAYLOAD_LENGTH ] = { 0 };
+    uint8_t downlink[ LORAWAN_MAX_PAYLOAD_LENGTH ] = { 0 };
+    size_t uplinkSize = 0, downlinkSize = LORAWAN_MAX_PAYLOAD_LENGTH;
     size_t bytesTransferred;
     uint8_t port;
     uint32_t dutyCycleInterval;
@@ -736,7 +726,7 @@ void main( void )
 {
     BoardInitMcu();
     xLoRaMacResponseQueue = xQueueCreate( LORAWAN_MAX_QUEUED_RESPONSES, sizeof( LoRaMacResponse_t ) );
-    xLoRaMacMessageBuffer = xMessageBufferCreate( ( LORAWAN_MAX_MESG_SIZE + LORAWAN_APP_PORT_SIZE + sizeof( size_t ) ) * 10 );
+    xLoRaMacMessageBuffer = xMessageBufferCreate( ( LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE + sizeof( size_t ) ) * 10 );
 
     if( ( xLoRaMacResponseQueue != NULL ) && ( xLoRaMacMessageBuffer != NULL ) )
     {
