@@ -179,10 +179,11 @@
       debug_initial_breakpoint="start_kernel"
       debug_startup_completion_point="start_kernel"
       gcc_entry_point="Reset_Handler"
+      link_use_linker_script_file="No"
       linker_printf_fmt_level="long long"
       linker_printf_width_precision_supported="Yes"
       linker_scanf_fmt_level="long long"
-      linker_section_placement_file="$(ProjectDir)/../../mcu/nordic_nrf52/boot/flash_placement.xml" />
+      linker_section_placement_file="../../mcu/nordic_nrf52/boot/flash_placement.xml" />
     <folder Name="config_files">
       <file file_name="../../mcu/nordic_nrf52/config_files/FreeRTOSConfig.h" />
     </folder>
@@ -191,6 +192,7 @@
         <folder Name="config_files">
           <file file_name="../../mcu/nordic_nrf52/config_files/board-config.h" />
           <file file_name="../../mcu/nordic_nrf52/config_files/sdk_config.h" />
+          <file file_name="../../mcu/nordic_nrf52/config_files/iot_gpio_config.h" />
         </folder>
         <folder Name="board">
           <file file_name="../../mcu/nordic_nrf52/board/pinName-board.h" />
@@ -211,7 +213,9 @@
           <file file_name="../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/system_nrf52.c" />
           <file file_name="../../mcu/nordic_nrf52/boot/thumb_crt0.s" />
           <file file_name="../../mcu/nordic_nrf52/boot/start.c" />
+          <file file_name="../../mcu/nordic_nrf52/boot/flash_placement.xml" />
         </folder>
+        <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_gpio.c" />
       </folder>
       <file file_name="../../LoRaMac-node/src/boards/mcu/utilities.c" />
     </folder>
@@ -280,6 +284,7 @@
     </folder>
     <folder Name="CommonIO">
       <file file_name="../../freertos/libraries/abstractions/common_io/include/iot_spi.h" />
+      <file file_name="../../freertos/libraries/abstractions/common_io/include/iot_gpio.h" />
     </folder>
   </project>
   <configuration

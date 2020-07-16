@@ -11,21 +11,21 @@ extern "C"
 /*!
  * NRF52840 Pins. This is not an exhaustive list, just a list of the pins we need for the lora stack
  */
-#define MCU_PINS \
-    P_0_3  = NRF_GPIO_PIN_MAP(0, 3),  \
-    P_0_4  = NRF_GPIO_PIN_MAP(0, 4),  \
-    P_0_13 = NRF_GPIO_PIN_MAP(0, 13), \
-    P_0_14 = NRF_GPIO_PIN_MAP(0, 14), \
-    P_0_16 = NRF_GPIO_PIN_MAP(0, 16), \
-    P_0_28 = NRF_GPIO_PIN_MAP(0, 28), \
-    P_0_29 = NRF_GPIO_PIN_MAP(0, 29), \
-    P_1_4  = NRF_GPIO_PIN_MAP(1, 4),  \
-    P_1_6  = NRF_GPIO_PIN_MAP(1, 6),  \
-    P_1_8  = NRF_GPIO_PIN_MAP(1, 8),  \
-    P_1_10 = NRF_GPIO_PIN_MAP(1, 10), \
-    P_1_13 = NRF_GPIO_PIN_MAP(1, 13), \
-    P_1_14 = NRF_GPIO_PIN_MAP(1, 14), \
-    P_1_15 = NRF_GPIO_PIN_MAP(1, 15)  
+#define MCU_PINS            \
+    RADIO_RESET,            \
+    RADIO_MOSI,             \
+    RADIO_MISO,             \
+    RADIO_SCLK,             \
+    RADIO_NSS,              \
+    RADIO_BUSY,             \
+    RADIO_DIO_1,            \
+    RADIO_ANT_SWITCH_POWER, \
+    RADIO_FREQ_SEL,         \
+    RADIO_XTAL_SEL,         \
+    RADIO_DEVICE_SEL,       \
+    LED_APP_TOGGLE,         \
+    LED_APP_DEMO,           \
+    LED_RX_TOGGLE
 
 #ifdef __cplusplus
 }
