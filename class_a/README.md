@@ -5,8 +5,9 @@ Class-A offers low-powered ALOHA based communincation between the end device and
 # Class A demo
 Demo shows a working example of a common class A application. It spawns two tasks:
 
-**LoRaMAC task:** This is a higher priority background task which initializes LoRaMAC stack and waits for any events from Radio layer or MaC layer. All events generated from Radio layer is through interrupts. Events are passed using FreeRTOS task notifications which unblocks the LoRaMAC task. Since the task serves interrupt events it runs at a higher priority than other task.
-**Note** Since the radio interrupt handler uses FreeRTOS API for task notifications, the interrupt priority for Radio should be set less than or equal to  `configMAX_SYSCALL_INTERRUPT_PRIORITY` as mentioned in FreeRTOS doc [here](https://www.freertos.org/a00110.html#kernel_priority). This means an interrupt can be delayed due to FreeRTOS kernel code execution.
+**LoRaMAC task:** This is a higher priority background task which initializes LoRaMAC stack and waits for any events from Radio layer or MaC layer. All events generated from radio layer is through interrupts. Events are passed using FreeRTOS task notifications which unblocks the LoRaMAC task. Since the task serves interrupt events it runs at a higher priority than other task.
+
+**Note:** Since the radio interrupt handler uses FreeRTOS API for task notifications, the priority for radio interrupts should be set less than or equal to  `configMAX_SYSCALL_INTERRUPT_PRIORITY` as mentioned in FreeRTOS doc [here](https://www.freertos.org/a00110.html#kernel_priority). This means an interrupt can be delayed due to FreeRTOS kernel code execution.
 
 
 In the default demo state, the device will uplink a _confirmed_ status byte every 5 seconds, and continue to re-send until receiving a server _Confirmed_ response.
