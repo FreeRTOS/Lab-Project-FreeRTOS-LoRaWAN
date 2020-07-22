@@ -13,7 +13,7 @@ Demo shows a working example of a common class A application. It spawns two task
 
 All events from MAC layer to application are exchaged using light weight task notifications. LoRaWAN allows multiple requests for the server to be piggy-backed to an uplink message. The responses to these requests are received by application in order using a FreeRTOS queue. A downlink queue exists in case application wants to receive multiple items without sending an actual payload uplink (by sending empty uplinks).
 
-**Low Power Mode:** An important feature of class A based end-devices are it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
+**Low Power Mode:** An important feature of class A based communication is it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
 
 # Dependencies
 Usage | Item
