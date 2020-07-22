@@ -1,4 +1,4 @@
-Reference implementation of LoRaWAN applications on FreeRTOS
+Reference implementation of LoRaWAN application on FreeRTOS
 
 # Class A demo
 
