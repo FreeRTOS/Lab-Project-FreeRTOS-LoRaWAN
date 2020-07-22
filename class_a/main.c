@@ -1,113 +1,220 @@
+#include <limits.h>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "LoRaMac.h"
 #include "board.h"
 #include "utilities.h"
 #include "radio.h"
-#include "message_buffer.h"
 #include "queue.h"
 
 /*
  * @brief Default data rate used for uplink messages.
+ * 
+ * Data rate for LoRAWAN depends on two factors: spreading factor and bandwidth. Default value is set to DR_0 which is
+ * the highest spreading factor and lowest bandwidth for a region. Higher spreading factor lead to better reception
+ * and longer range from the gateway. However this also leads to longest air time for radio and lowest data rate
+ * for transmission.
+ *
  */
 #define LORAWAN_DEFAULT_DATARATE           ( DR_0 )
 
 /**
- * @brief Can be used to enable/disable adaptive data rate and
- * frequency hopping.
+ * @brief Used to turn on/off adapative data rate.
+ *
+ * Enabling adaptive data rate allows the network to set optimized data rates for end devices
+ * thereby optimizing on air time and power consumption. Its recommended to enable adaptive
+ * data rate for static devices and devices with stable RF conditions.
  */
 #define LORAWAN_ADR_ON                     ( 1 )
 
 /**
- * @brief Maximum payload length defined for LoRaWAN.
+ * @brief Maximum payload length defined for the demo.
  *
- * Applications should take care of duty cycle restrictions and fair access policies for
- * each regions while determining the size of message to be transmitted. Larger messages can
- * lead to longer air-time for radio, and this can lead to radio using up all of the duty cycle limit.
+ * This can be used to cap the maximum packet size that can be transferred anytime by the demo.
+ * LoRaWAN payload can vary upto 222 bytes. However applications should take care of duty cycle restrictions and
+ * fair access policies for each region while determining the size of a message to be transmitted.
+ * Larger messages leads to longer air-time and increased power consumption for the 
+ * radio as well as using up all of the duty cycle for a channel.
  */
-#define LORAWAN_MAX_PAYLOAD_LENGTH         ( 242 )
+#define LORAWAN_MAX_PAYLOAD_LENGTH         ( 222 )
 
 /**
- * @brief Mac layer port size defined for LoRaWAN.
- */
-#define LORAWAN_PORT_SIZE                  ( 1 )
-
-/**
- * @brief LoRa MAC layer port used for communication. Downlink messages
- * should be send on this port number.
+ * @brief LoRa MAC layer port used by the application.
+ * Downlink unicast messages should be send to this port number.
  */
 #define LORAWAN_APP_PORT                   ( 2 )
 
 /**
- * @brief Flag for LoRaMAC stack to tell if its a public network such as TTN.
+ * @brief Flag to indicate the underlying stack, if application is using a public network such 
+ * as The Things Network.
  */
 #define LORAWAN_PUBLIC_NETWORK             ( 1 )
 
 /**
- * @brief Queue size for LoRaMAC response queue.
- */
-#define LORAWAN_MAX_QUEUED_RESPONSES       ( 10 )
-
-/**
- * @brief Maximum join attempts before giving up. LoRa tries a range of channels
- * within the band to send join requests for the first time.
+ * @brief Maximum join attempts before giving up.
+ * 
+ * Retry attempts tries to send join requests in different channels thereby finding a suitable gateway which
+ * is tuned to that channel.
  */
 #define LORAWAN_MAX_JOIN_ATTEMPTS          ( 1000 )
 
 /**
- * @brief Should send confirmed messages (with acknowledgment) or not.
+ * @brief Interval between retry attempts for OTAA join.
+ * It waits for a retry interval +- random jitter ( to avoid dos ) before attempting to 
+ * join again with LoRaWAN network.
  */
-#define LORAWAN_SEND_CONFIRMED_MESSAGES    ( 1 )
+#define LORAWAN_JOIN_RETRY_INTERVAL_MS      ( 2000 )
 
 /**
- * @brief Maximum time to wait for a downlink message. This should be greater than or equal to the
- * (RX1 + RX2) window duration for low latency downlink.
+ * @brief Should send confirmed messages (with an acknowledgment) or not.
  */
-
-#define LORAWAN_RECEIVE_TIMEOUT_MS         ( 5000 )
+#define LORAWAN_SEND_CONFIRMED_MESSAGES    ( 0 )
 
 /**
  * @brief Defines the application data transmission duty cycle time in milliseconds.
+ *
+ * Although there is a duty cycle restriction which allows to transmit for only a portion of time on a channel,
+ * there are also additional policies enforced by networks to prevent interference and quality degradation for transmission.
+ * 
+ * For example TTN enforces uplink of 36sec airtime/day and 10 downlink messages/day. Demo sends 1 byte of unconfirmed uplink,
+ * using a default data rate of DR_0 (SF = 10, BW=125Khz) for US915, so airtime for each uplink ~289ms, hence setting the interval
+ * to 700 seconds to achieve maximum air time of 36sec per day.
+ * 
  */
-#define LORAWAN_APP_TX_DUTYCYCLE_MS        ( 5000 )
+#define LORAWAN_APPLICATION_TX_INTERVAL_SEC        ( 700U )
 
 /**
- * @brief Defines a random jitter bound for application data transmission duty cycle in milliseconds.
+ * @brief  Maximum time to wait for a downlink packet after sending uplink.
+ *
  */
-#define LORAWAN_APP_TX_DUTYCYCLE_RND_MS    ( 1000 )
+#define LORAWAN_APPLICATION_RX_WAIT_MS          ( 1000 )
+
+/**
+ * @brief Defines a random jitter bound in milliseconds for application data transmission duty cycle.
+ *
+ * This allows devices to space their transmissions slighltly between each other in cases like all devices reboots and tries to
+ * join server at same time.
+ */
+#define LORAWAN_MAX_JITTER_MS    ( 500 )
+
+
+/**
+ * @brief Queue size used by application task to schedule a message for transmission.
+ * 
+ * Common ClassA use case of LoRaWan involves application task wakes up infrequently to read a scensor data for example, sends
+ * it uplink and then goes back to sleep again. Hence the queue size is set to 1 by default. However application tasks
+ * can wake up at non periodic intervals or send a burst of packets, in which case queue size is used to control the
+ * uplink rate.
+ */
+#define LORAWAN_UPLINK_QUEUE_SIZE          ( 1 )
+
+/**
+ * @brief Queue size used by an application task to block on downlink messages.
+ * 
+ * Class A application sends an uplink and then uses two receive slots for any downlink messages from the server. It does not receive
+ * messages from server any other time. Queue size is set to 1 since the application task in demo sends an uplink and waits for any
+ * downlink before sending next uplink. Queue size can be adjusted based on application task needs.
+ * 
+ */
+#define LORAWAN_DOWNLINK_QUEUE_SIZE        ( 1 )
+
+
+/**
+ * @breif Response queue size for the demo
+ *
+ * For class A application at most 3 responses can be enqueued at any time (SRV_MAC_LINK_CHECK_ANS, SRV_MAC_DEVICE_TIME_ANS, CONFIRMED_ACK)
+ */
+#define LORAWAN_RESPONSE_QUEUE_SIZE        ( 3 ) 
+
 
 /**
  * @brief EUI and keys that needs to be provisioned for device identity and security.
  */
+ 
+#error "Please configure DEV EUI, Join EUI and App NWK key to run the demo"
 
-#define DEV_EUI        {};
-#define JOIN_EUI       {};
-#define APP_NWK_KEY    {};
+#define DEV_EUI       {}
+#define JOIN_EUI      {}
+#define APP_NWK_KEY   {}
 
 /**
- * @biref Defines types of join methods.
+ * @brief Events used for inter task notifications.
+ */
+typedef enum LoRaWanEvent {
+    
+    /**
+     * These events are used by the Radio and MAC layer to indicate pending data
+     * that needs to be processed.
+     */
+    
+    LORAWAN_EVENT_RADIO_PENDING = 0x1,
+    LORAWAN_EVENT_MAC_PENDING = 0x2,
+    
+    /**
+     * These are control events generated from LoRaMAC stack. Events are used
+     * by the LoRaWAN control task to perform control activities for class A applications.
+     */
+    LORAWAN_EVENT_LORAMAC_STARTED = 0x1,
+    LORAWAN_EVENT_LORAMAC_FAILED = 0x2,
+    LORAWAN_EVENT_FRAME_LOSS = 0x4,
+    LORAWAN_EVENT_SCHEDULE_UPLINK = 0x8,
+    
+    /**
+     * The events are used by an application task, for example  to check if network is up before sending  uplink.
+     */
+     LORAWAN_EVENT_NETWORK_JOINED = 0x1, 
+     LORAWAN_EVENT_NETWORK_JOIN_FAILED = 0x2
+
+} LoRaWanEvent_t ;
+
+
+/**
+ * @brief Identifies the type of response sent from the LoRaMAC stack.
  */
 typedef enum
 {
-    LORAWAN_JOIN_MODE_OTAA = 0,
-    LORAWAN_JOIN_MODE_ABP
-} LoraWanJoinMode_t;
+    LORAWAN_RESPONSE_TYPE_MLME = 0,
+    LORAWAN_RESPONSE_TYPE_MCPS
+} LoRaWanResponseType_t;
 
-typedef enum
+/**
+ * @brief Response structure which used to hold a response message from LoRaMAC stack.
+ */
+typedef struct LoRaWanResponse
 {
-    LORAMAC_RESPONSE_TYPE_MLME = 0,
-    LORAMAC_RESPONSE_TYPE_MCPS
-} LoRaMacResponseType_t;
-
-typedef struct LoRaMacResponse
-{
-    LoRaMacResponseType_t type;
+    LoRaWanResponseType_t type;
     union
     {
         MlmeConfirm_t mlmeConfirm;
         McpsConfirm_t mcpsConfirm;
     } resp;
-} LoRaMacResponse_t;
+} LoRaWanResponse_t;
+
+/**
+ * @brief Structure used to hold an uplink message.
+ * Application task can queue an uplink message any time, however actual transmission occurs 
+ * by obeying transmission policies for that region.
+ */
+typedef struct LoRaWanUplinkMessage
+{
+    uint8_t isConfirmed;
+    uint16_t port;
+    uint16_t length;
+    uint8_t data[ LORAWAN_MAX_PAYLOAD_LENGTH ];
+} LoRaWanUplinkMessage_t;
+
+/**
+ * @brief Structure used to hold a downlink message.
+ */
+typedef struct LoRaWanDowlinkMessage
+{
+    
+    uint16_t port;
+    uint16_t length;
+    uint8_t data[LORAWAN_MAX_PAYLOAD_LENGTH];
+} LoRaWanDowlinkMessage_t;
+
 
 /**
  * @brief Strings for denoting status responses from LoRaMAC layer.
@@ -164,37 +271,48 @@ static const char * EventInfoStatusStrings[] =
     "Beacon not found"               /* LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND */
 };
 
-/**
- * @brief The callbacks registered with LoRaMAC stack layer. \
- */
-static LoRaMacPrimitives_t LoRaMacPrimitives;
-
-static LoRaMacCallback_t LoRaMacCallbacks;
 
 /**
- * @brief Main LoRaWAN Class A application task handle.
- */
-static TaskHandle_t xLoRaWANTask;
-
-/**
- * @brief This task runs the LoRaMAC stack processing, based on
- * events received from radio interrupts or other timer expired
- * events.
+ * @brief This task initializes and runs the underlying LoRaMAC stack.
+ 
+ * The task receives events from LoRa radio interrupts and calls LoRaMAC stack APIs for processing the events.
+ * It also receives notifications from LoRaMAC stack which needs processing. Task registers callback
+ * handlers with the LoRaMAC stack and uses it to dispatch events and messages to other tasks.
  */
 static TaskHandle_t xLoRaMacTask;
 
-/**
- * @brief Queue used to wait for responses from LoRaMAC stack
- */
-static QueueHandle_t xLoRaMacResponseQueue;
 
 /**
- * @brief Buffer used to store the downlink messages received from the
- * LoRaMAC stack. User applications can do a blocking receiveFrom operation for a timeout
- * value, usually after a successful uplink or whenever downlink is expected.
+ * @brief Task for LoRaWAN class A application.
  *
+ * Task sends periodic uplink messages, and also performs control activities like frame loss detection and rejoin procedure,
+ * sending empty uplink messages to respond back to network server commands etc..
+ * 
+ * LoRaWAN  task interacts with LoRaMAC task using task notifications and response queue.
  */
-static MessageBufferHandle_t xLoRaMacMessageBuffer;
+static TaskHandle_t xLoRaWanTask;
+
+/**
+ * @brief Response Queue for LoRaWAN.
+ *
+ * The response queue is used to receive responses for queued requests in the same order.
+ */
+static QueueHandle_t xResponseQueue;
+
+
+/**
+ * @brief Uplink Queue for LoRaWAN.
+ *
+ * Used by application task to queue messages to be sent uplink.
+ */
+static QueueHandle_t xUplinkQueue;
+
+/**
+ * @brief Downlink Queue for LoRaWAN.
+ *
+ * Used by application task to block on messages received downlink.
+ */
+static QueueHandle_t xDownlinkQueue;
 
 
 /*!
@@ -203,7 +321,7 @@ static MessageBufferHandle_t xLoRaMacMessageBuffer;
  * \param buffer Buffer to be printed
  * \param size   Buffer size to be printed
  */
-static void PrintHexBuffer( uint8_t * buffer,
+static void prvPrintHexBuffer( uint8_t * buffer,
                             uint8_t size )
 {
     uint8_t newline = 0;
@@ -227,31 +345,38 @@ static void PrintHexBuffer( uint8_t * buffer,
     configPRINTF( ( "\n" ) );
 }
 
-static void McpsConfirm( McpsConfirm_t * mcpsConfirm )
+static void prvMcpsConfirm( McpsConfirm_t * mcpsConfirm )
 {
-    LoRaMacResponse_t response = { 0 };
+    LoRaWanResponse_t response;
 
     configPRINTF( ( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[ mcpsConfirm->Status ] ) );
-
-    response.type = LORAMAC_RESPONSE_TYPE_MCPS;
+    
+    response.type = LORAWAN_RESPONSE_TYPE_MCPS;
     memcpy( &response.resp.mcpsConfirm, mcpsConfirm, sizeof( McpsConfirm_t ) );
-    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+    
+    xQueueSend( xResponseQueue, &response, portMAX_DELAY );
 }
 
 
-static void McpsIndication( McpsIndication_t * mcpsIndication )
+static void prvMcpsIndication( McpsIndication_t * mcpsIndication )
 {
-    uint8_t buffer[ LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE ];
-
+    
+    LoRaWanDowlinkMessage_t downlink;
+    
     configPRINTF( ( "MCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status ] ) );
 
     if( ( mcpsIndication->Status == LORAMAC_EVENT_INFO_STATUS_OK ) &&
         ( mcpsIndication->RxData == true ) )
     {
-        buffer[ 0 ] = mcpsIndication->Port;
-        memcpy( ( buffer + LORAWAN_PORT_SIZE ), mcpsIndication->Buffer, mcpsIndication->BufferSize );
-
-        xMessageBufferSend( xLoRaMacMessageBuffer, buffer, ( mcpsIndication->BufferSize + LORAWAN_PORT_SIZE ), portMAX_DELAY );
+        configASSERT( mcpsIndication->BufferSize <= LORAWAN_MAX_PAYLOAD_LENGTH );
+        downlink.port = mcpsIndication->Port;
+        downlink.length = mcpsIndication->BufferSize;
+        memcpy( downlink.data, mcpsIndication->Buffer, mcpsIndication->BufferSize );
+        
+        if( xQueueSend( xDownlinkQueue, &downlink, 1 ) != pdTRUE )
+        {
+            configPRINTF(( "Failed to send downlink data to the queue.\r\n" ));
+        }
     }
 
     /* Check Multicast */
@@ -260,83 +385,65 @@ static void McpsIndication( McpsIndication_t * mcpsIndication )
     if( mcpsIndication->FramePending == true )
     {
         /**
-         * There are some pending commands to be sent uplink. Trigger an empty uplink
-         * or send a routine uplink message to piggyback these requests along with it.
+         * There are some pending commands to be sent uplink. Set an uplink event for the control task to 
+         * schedule an uplink whenever possible.
          */
+        xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_SCHEDULE_UPLINK, eSetBits, NULL );
+    }
+     
+    if( mcpsIndication->Status == LORAMAC_EVENT_INFO_STATUS_DOWNLINK_TOO_MANY_FRAMES_LOSS )
+    {
+        xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_FRAME_LOSS, eSetBits, NULL );
     }
 }
 
 
-static void MlmeIndication( MlmeIndication_t * MlmeIndication )
+static void prvMlmeIndication( MlmeIndication_t * MlmeIndication )
 {
-    /* Implementation for MLME indication */
+    LoRaMacEventInfoStatus_t status = MlmeIndication->Status;
+    
+    configPRINTF( ( "MLME Indication status: %s\n", EventInfoStatusStrings[ status ] ) );
+    
+    if( status == LORAMAC_EVENT_INFO_STATUS_OK )
+    {
+        if( MlmeIndication->MlmeIndication == MLME_SCHEDULE_UPLINK )
+        {
+            xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_SCHEDULE_UPLINK, eSetBits, NULL );
+        }
+    }
+        
 }
 
 
-static void MlmeConfirm( MlmeConfirm_t * mlmeConfirm )
+static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 {
     LoRaMacEventInfoStatus_t status = mlmeConfirm->Status;
-    LoRaMacResponse_t response;
+    LoRaWanResponse_t response;
 
     configPRINTF( ( "MLME CONFIRM  status: %s\n", EventInfoStatusStrings[ status ] ) );
 
-    response.type = LORAMAC_RESPONSE_TYPE_MLME;
+    response.type = LORAWAN_RESPONSE_TYPE_MLME;
     memcpy( &response.resp.mlmeConfirm, mlmeConfirm, sizeof( MlmeConfirm_t ) );
-    xQueueSend( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+    xQueueSend( xResponseQueue, &response, portMAX_DELAY );
 }
 
-static void onRadioNotify( bool fromISR )
+static void onRadioNotify()
 {
     BaseType_t xHigherPriorityTaskWoken;
-
-    if( fromISR )
-    {
-        xHigherPriorityTaskWoken = pdFALSE;
-
-        vTaskNotifyGiveFromISR( xLoRaMacTask, &xHigherPriorityTaskWoken );
-
-        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
-    }
-    else
-    {
-        xTaskNotifyGive( xLoRaMacTask );
-    }
+    
+    xHigherPriorityTaskWoken = pdFALSE;
+    xTaskNotifyAndQueryFromISR( xLoRaMacTask, LORAWAN_EVENT_RADIO_PENDING, eSetBits, NULL, &xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
-static void onMacNotify( void )
+static void prvOnMacNotify( void )
 {
-    xTaskNotifyGive( xLoRaMacTask );
+    xTaskNotifyAndQuery( xLoRaMacTask, LORAWAN_EVENT_MAC_PENDING, eSetBits, NULL );
 }
 
-static uint8_t getBatteryLevel( void )
+static uint8_t prvGetBatteryLevel( void )
 {
     return 0;
-}
-
-static void prvLoRaMacTask( void * params )
-{
-    uint32_t ulNotifiedValue;
-
-    for( ; ; )
-    {
-        ulNotifiedValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-
-        while( ulNotifiedValue > 0 )
-        {
-            /* Process Radio IRQ. */
-            if( Radio.IrqProcess != NULL )
-            {
-                Radio.IrqProcess();
-            }
-
-            /*Process Lora mac events based on Radio events. */
-            LoRaMacProcess();
-
-            ulNotifiedValue--;
-        }
-    }
-
-    vTaskDelete( NULL );
 }
 
 
@@ -416,7 +523,7 @@ static LoRaMacStatus_t prvOTAAJoinNetwork( void )
     MlmeReq_t mlmeReq = { 0 };
     MibRequestConfirm_t mibReq = { 0 };
     uint32_t ulDutyCycleTimeMS = 0U;
-    LoRaMacResponse_t response;
+    LoRaWanResponse_t response;
     LoRaMacEventInfoStatus_t responseStatus;
     size_t xNumTries;
 
@@ -444,9 +551,10 @@ static LoRaMacStatus_t prvOTAAJoinNetwork( void )
 
         if( status == LORAMAC_STATUS_OK )
         {
-            xQueueReceive( xLoRaMacResponseQueue, &response, portMAX_DELAY );
+            xQueueReceive( xResponseQueue, &response, portMAX_DELAY );
 
-            if( ( response.type == LORAMAC_RESPONSE_TYPE_MLME ) && ( response.resp.mlmeConfirm.MlmeRequest == MLME_JOIN ) )
+            if( ( response.type == LORAWAN_RESPONSE_TYPE_MLME ) 
+                && ( response.resp.mlmeConfirm.MlmeRequest == MLME_JOIN ) )
             {
                 if( response.resp.mlmeConfirm.Status == LORAMAC_EVENT_INFO_STATUS_OK )
                 {
@@ -477,45 +585,42 @@ static LoRaMacStatus_t prvOTAAJoinNetwork( void )
 
         if( xNumTries < ( LORAWAN_MAX_JOIN_ATTEMPTS - 1 ) )
         {
-            configPRINTF( ( "Retrying join attempt after %lu seconds.\n", ( LORAWAN_APP_TX_DUTYCYCLE_MS / 1000 ) ) );
+            ulDutyCycleTimeMS = ( LORAWAN_JOIN_RETRY_INTERVAL_MS ) + 
+                                 randr ( -LORAWAN_MAX_JITTER_MS, LORAWAN_MAX_JITTER_MS );
+            configPRINTF( ( "Retrying join attempt after %lu seconds.\n", ( ulDutyCycleTimeMS / 1000 ) ) );
+            vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
         }
-
-        vTaskDelay( pdMS_TO_TICKS( LORAWAN_APP_TX_DUTYCYCLE_MS ) );
     }
 
     return status;
 }
 
-static size_t prvSend( uint8_t port,
-                       uint8_t * message,
-                       size_t messageSize,
-                       bool confirmed )
+static LoRaMacStatus_t prvSendUplink( LoRaWanUplinkMessage_t * pUplink, uint32_t *pDutyCyleWaitTimeMS )
 {
     McpsReq_t mcpsReq;
     LoRaMacTxInfo_t txInfo;
     LoRaMacStatus_t status;
-    size_t bytesSent = 0;
     uint32_t ulDutyCycleTimeMS = 0;
-    LoRaMacResponse_t response = { 0 };
+    LoRaWanResponse_t response;
 
-    status = LoRaMacQueryTxPossible( messageSize, &txInfo );
+    status = LoRaMacQueryTxPossible( pUplink->length, &txInfo );
 
     if( status == LORAMAC_STATUS_OK )
     {
-        if( confirmed == false )
+        if( pUplink->isConfirmed == false )
         {
             mcpsReq.Type = MCPS_UNCONFIRMED;
-            mcpsReq.Req.Unconfirmed.fPort = port;
-            mcpsReq.Req.Unconfirmed.fBuffer = message;
-            mcpsReq.Req.Unconfirmed.fBufferSize = messageSize;
+            mcpsReq.Req.Unconfirmed.fPort = pUplink->port;
+            mcpsReq.Req.Unconfirmed.fBuffer = pUplink->data;
+            mcpsReq.Req.Unconfirmed.fBufferSize = pUplink->length;
             mcpsReq.Req.Unconfirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
         }
         else
         {
             mcpsReq.Type = MCPS_CONFIRMED;
-            mcpsReq.Req.Confirmed.fPort = port;
-            mcpsReq.Req.Confirmed.fBuffer = message;
-            mcpsReq.Req.Confirmed.fBufferSize = messageSize;
+            mcpsReq.Req.Confirmed.fPort = pUplink->port;
+            mcpsReq.Req.Confirmed.fBuffer = pUplink->data;
+            mcpsReq.Req.Confirmed.fBufferSize = pUplink->length;
             mcpsReq.Req.Confirmed.NbTrials = 8;
             mcpsReq.Req.Confirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
         }
@@ -523,124 +628,151 @@ static size_t prvSend( uint8_t port,
         do
         {
             status = LoRaMacMcpsRequest( &mcpsReq );
+            ulDutyCycleTimeMS = mcpsReq.ReqReturn.DutyCycleWaitTime;
 
             if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
             {
-                ulDutyCycleTimeMS = mcpsReq.ReqReturn.DutyCycleWaitTime;
                 configPRINTF( ( "Duty cycle restriction. Wait ~%lu second(s) before sending uplink.\n", ( ulDutyCycleTimeMS / 1000 ) ) );
                 vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
             }
         } while( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED );
-
-        if( status == LORAMAC_STATUS_OK )
-        {
-            xQueueReceive( xLoRaMacResponseQueue, &response, portMAX_DELAY );
-
-            if( ( response.type == LORAMAC_RESPONSE_TYPE_MCPS ) && ( response.resp.mcpsConfirm.Status == LORAMAC_EVENT_INFO_STATUS_OK ) )
-            {
-                if( ( response.resp.mcpsConfirm.McpsRequest == MCPS_UNCONFIRMED ) ||
+    }
+    
+    if( status == LORAMAC_STATUS_OK )
+    {
+         xQueueReceive( xResponseQueue, &response, portMAX_DELAY );
+         if( ( response.type == LORAWAN_RESPONSE_TYPE_MCPS ) && ( response.resp.mcpsConfirm.Status == LORAMAC_EVENT_INFO_STATUS_OK ) )
+         {
+             if( ( response.resp.mcpsConfirm.McpsRequest == MCPS_UNCONFIRMED ) ||
                     ( ( response.resp.mcpsConfirm.McpsRequest == MCPS_CONFIRMED ) && ( response.resp.mcpsConfirm.AckReceived ) ) )
+             {
+                 status = LORAMAC_STATUS_OK;
+             }
+             else
+             {
+                 status = LORAMAC_STATUS_ERROR;
+             }
+         }
+         else
+         {
+             status = LORAMAC_STATUS_ERROR;
+         }
+    }
+    
+    *pDutyCyleWaitTimeMS = ulDutyCycleTimeMS;
+
+
+    return status;
+}
+
+static void prvLoRaMacTask( void * params )
+{
+    uint32_t ulNotifiedValue;
+    LoRaMacStatus_t xStatus;
+    LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
+    LoRaMacCallback_t xLoRaMacCallbacks = { 0 };
+   
+    xLoRaMacPrimitives.MacMcpsConfirm = prvMcpsConfirm;
+    xLoRaMacPrimitives.MacMcpsIndication = prvMcpsIndication;
+    xLoRaMacPrimitives.MacMlmeConfirm = prvMlmeConfirm;
+    xLoRaMacPrimitives.MacMlmeIndication = prvMlmeIndication;
+    xLoRaMacCallbacks.GetBatteryLevel = prvGetBatteryLevel;
+    xLoRaMacCallbacks.MacProcessNotify = prvOnMacNotify;
+
+
+    xStatus = LoRaMacInitialization( &xLoRaMacPrimitives, &xLoRaMacCallbacks, LORAMAC_REGION_US915 );
+
+    if( xStatus == LORAMAC_STATUS_OK )
+    {
+        Radio.SetEventNotify( &onRadioNotify );
+        configPRINTF(( "LoRa MAC stack initialized.\r\n" ));
+    }
+    else
+    {
+        configPRINTF(( "LoRa MAC initialization failed, status = %d.\r\n", xStatus ));
+    }
+
+    if( xStatus == LORAMAC_STATUS_OK )
+    {
+        xStatus = prvConfigure();
+
+        if( xStatus != LORAMAC_STATUS_OK )
+        {
+            configPRINTF( ( "LoRa MAC configuration failed, status = %d.\n", xStatus ) );
+        }
+    }
+
+    if( xStatus == LORAMAC_STATUS_OK )
+    {
+        xStatus = LoRaMacStart();
+
+        if( xStatus != LORAMAC_STATUS_OK )
+        {
+            configPRINTF(( "LoRa MAC start failed, status = %d.\n", xStatus ));
+        }
+    }
+    
+    if( xStatus == LORAMAC_STATUS_OK )
+    {
+        
+        xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_LORAMAC_STARTED, eSetBits, NULL );
+
+        for( ; ; )
+        {
+            xTaskNotifyWait( 0x00, ULONG_MAX, &ulNotifiedValue, portMAX_DELAY );
+
+            if( ulNotifiedValue & LORAWAN_EVENT_RADIO_PENDING )
+            {
+                /* Process Radio IRQ. */
+                if( Radio.IrqProcess != NULL )
                 {
-                    bytesSent = messageSize;
+                    Radio.IrqProcess();
                 }
+            }
+            
+            if( ulNotifiedValue & LORAWAN_EVENT_MAC_PENDING )
+            {
+                /*Process Lora mac events based on Radio events. */
+                LoRaMacProcess();
             }
         }
     }
     else
     {
-        /* Send empty frame in order to flush any pending MAC commands */
-        configPRINTF( ( "TX not possible for data size %d.\n", messageSize ) );
-
-        mcpsReq.Type = MCPS_UNCONFIRMED;
-        mcpsReq.Req.Unconfirmed.fBuffer = NULL;
-        mcpsReq.Req.Unconfirmed.fBufferSize = 0;
-        mcpsReq.Req.Unconfirmed.Datarate = LORAWAN_DEFAULT_DATARATE;
-
-        ( void ) LoRaMacMcpsRequest( &mcpsReq );
+        xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_LORAMAC_FAILED, eSetBits, NULL );
     }
 
-    return bytesSent;
-}
-
-static size_t prvReceiveFrom( uint8_t * port,
-                              uint8_t * buffer,
-                              size_t bufferSize,
-                              size_t timeoutMS )
-{
-    TickType_t ticksToWait = pdMS_TO_TICKS( timeoutMS );
-    size_t bytesReceived = 0, received = 0;
-    uint8_t recvBuffer[ LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE ];
-
-    received = xMessageBufferReceive( xLoRaMacMessageBuffer, recvBuffer, ( bufferSize + LORAWAN_PORT_SIZE ), ticksToWait );
-
-    if( received > 0 )
-    {
-        *port = recvBuffer[ 0 ];
-        bytesReceived = ( received - LORAWAN_PORT_SIZE );
-        memcpy( buffer, ( recvBuffer + LORAWAN_PORT_SIZE ), bytesReceived );
-    }
-
-    return bytesReceived;
+    vTaskDelete( NULL );
 }
 
 static void prvLorawanClassATask( void * params )
 {
     LoRaMacStatus_t status;
     MibRequestConfirm_t mibReq;
-    uint8_t uplink[ LORAWAN_MAX_PAYLOAD_LENGTH ] = { 0 };
-    uint8_t downlink[ LORAWAN_MAX_PAYLOAD_LENGTH ] = { 0 };
-    size_t uplinkSize = 0, downlinkSize = LORAWAN_MAX_PAYLOAD_LENGTH;
-    size_t bytesTransferred;
-    uint8_t port;
-    uint32_t dutyCycleInterval;
-
-    LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
-    LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
-    LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
-    LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
-    LoRaMacCallbacks.GetBatteryLevel = getBatteryLevel;
-    LoRaMacCallbacks.MacProcessNotify = onMacNotify;
-
-    configPRINTF( ( "###### ===== Class A demo application v1.0.0 ==== ######\n\n" ) );
-
-    status = LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_US915 );
-
-    if( status == LORAMAC_STATUS_OK )
+    uint32_t ulDutyCycleWaitTimeMs;
+    uint32_t ulNotifiedValue;
+    uint32_t ulTxIntervalMs;
+    LoRaWanUplinkMessage_t uplink;
+    LoRaWanDowlinkMessage_t downlink;
+    LoRaWanResponse_t response;
+    
+    configASSERT( xTaskCreate( prvLoRaMacTask, "LoRaMac", configMINIMAL_STACK_SIZE * 40, NULL, tskIDLE_PRIORITY + 1, &xLoRaMacTask ) == pdTRUE );
+    
+    /**
+     * Wait for LoRaMAC stack to be runnnig.
+     */
+     
+    xTaskNotifyWait( 0x00, ULONG_MAX, &ulNotifiedValue, portMAX_DELAY );
+    
+    if( ulNotifiedValue & LORAWAN_EVENT_LORAMAC_STARTED )
     {
-        Radio.SetEventNotify( &onRadioNotify );
-        configPRINTF( ( "LoRa MAC stack initialized.\r\n" ) );
-    }
-    else
-    {
-        configPRINTF( ( "LoRa MAC initialization failed, status = %d.\r\n", status ) );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        status = prvConfigure();
-
-        if( status != LORAMAC_STATUS_OK )
-        {
-            configPRINTF( ( "LoRa MAC configuration failed, status = %d.\n", status ) );
-        }
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        status = LoRaMacStart();
-
-        if( status == LORAMAC_STATUS_OK )
-        {
-            configPRINTF( ( "Lora MAC started. \r\n" ) );
-        }
-        else
-        {
-            configPRINTF( ( "LoRa MAC start failed, status = %d.\n", status ) );
-        }
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
+        
+        /**
+         * LoRaMAC stack started. Initiate the join procedure if not already joined.
+         */
+         
+        configPRINTF(( "Initiating OTAA join procedure.\r\n" ));
+         
         mibReq.Type = MIB_NETWORK_ACTIVATION;
         status = LoRaMacMibGetRequestConfirm( &mibReq );
 
@@ -664,59 +796,115 @@ static void prvLorawanClassATask( void * params )
         {
             configPRINTF( ( "Error while fetching activation status, error = %d\n.", status ) );
         }
-    }
 
-    if( status == LORAMAC_STATUS_OK )
-    {
-        /**
-         * Task loops forever and sends periodic uplink byte 0xFF. It then blocks for a period of at least
-         * receive window time for any packets downlink and display data received onto the terminal.
-         */
-
-        configPRINTF( ( "Sending and receiving messages over LoRaWAN.\n" ) );
-
-        uplink[ 0 ] = 0xFF;
-        uplinkSize = 1;
-
-        for( ; ; )
+        if( status == LORAMAC_STATUS_OK )
         {
-            bytesTransferred = prvSend( LORAWAN_APP_PORT, uplink, uplinkSize, LORAWAN_SEND_CONFIRMED_MESSAGES );
-
-            if( bytesTransferred == uplinkSize )
-            {
-                configPRINTF( ( "Sent uplink message of size %d bytes.\n", bytesTransferred ) );
-            }
-            else
-            {
-                /**
-                 * Handle partial bytes sent due to data rate restrictions.
-                 */
-                configPRINTF( ( "Failed to send all the bytes uplink, sent %d bytes.\n", bytesTransferred ) );
-            }
-
-            configPRINTF( ( "Wait for %d seconds to receive any downlink data.\n", ( LORAWAN_RECEIVE_TIMEOUT_MS / 1000 ) ) );
-
-            bytesTransferred = prvReceiveFrom( &port, downlink, downlinkSize, LORAWAN_RECEIVE_TIMEOUT_MS );
-
-            if( bytesTransferred > 0 )
-            {
-                configPRINTF( ( "Received downlink message, port = %d, size = %d bytes:\n", port, bytesTransferred ) );
-                PrintHexBuffer( downlink, bytesTransferred );
-            }
-
+            
             /**
-             * Wait for atleast dutycyle time +/- a random jitter value before sending the next uplink message.
+             * Successfully joined a LoRaWAN network. Now the  task runs in an infinite loop,
+             * sends periodic uplink message of 1 byte by obeying fair access policy for the LoRaWAN network.
+             * If the MAC has indicated an uplink message to schedule as soon as possible, then it sends
+             * an uplink message immediately after the duty cycle wait time. After each uplink it also waits
+             * on downlink queue for any messages from the network server.
              */
-            dutyCycleInterval = LORAWAN_APP_TX_DUTYCYCLE_MS + randr( -LORAWAN_APP_TX_DUTYCYCLE_RND_MS, LORAWAN_APP_TX_DUTYCYCLE_RND_MS );
+             
+            uplink.port = LORAWAN_APP_PORT;
+            uplink.isConfirmed = LORAWAN_SEND_CONFIRMED_MESSAGES;
+            uplink.length = 1;
+            uplink.data[0] = 0xFF;
+        
+            for( ;; )
+            {
+                
+                status = prvSendUplink( &uplink, &ulDutyCycleWaitTimeMs );
+                    
+                if( status == LORAMAC_STATUS_OK )
+                {
+                    configPRINTF(( "Sent an uplink message successfully. Waiting for any downlink packets for %d ms.\r\n", LORAWAN_APPLICATION_RX_WAIT_MS ));
+                    
+                    /* Check for any downlink messages on the queue. */
+                    if( xQueueReceive( xDownlinkQueue, &downlink, pdMS_TO_TICKS( LORAWAN_APPLICATION_RX_WAIT_MS ) ) == pdTRUE )
+                    {
+                        configPRINTF(( "Received downlink message on port %d:\r\n", downlink.port ));
+                        prvPrintHexBuffer ( downlink.data, downlink.length );
+                    }
+                    else
+                    {
+                        configPRINTF(( "No messages downlink.\r\n" ));
+                    }
+                    
+                    /**
+                     * Poll for any events generated from MAC layer withoug blocking. 
+                     */
+                    xTaskNotifyWait( 0x00, ULONG_MAX, &ulNotifiedValue, 1 );
+                  
+                    if( ulNotifiedValue & LORAWAN_EVENT_SCHEDULE_UPLINK )
+                    {
+                        /**
+                         * MAC layer indicated there are pending acknowledgments to be sent
+                         * uplink as soon as possible. Wait for duty cycle time and send an uplink.
+                         */
+                        configPRINTF(( "Sending an empty uplink to flush responses to MAC commands from server.\r\n" ));
+                        
+                        uplink.isConfirmed = false;
+                        uplink.length = 0;
 
-            configPRINTF( ( "Wait for duty cycle time (%d seconds) before sending next uplink data.\n", ( dutyCycleInterval / 1000 ) ) );
-
-            vTaskDelay( pdMS_TO_TICKS( dutyCycleInterval ) );
+                        if( ulDutyCycleWaitTimeMs > 0 )
+                        {
+                            vTaskDelay( pdMS_TO_TICKS( ulDutyCycleWaitTimeMs ) );
+                        }
+                    }
+                    else if( ulNotifiedValue & LORAWAN_EVENT_FRAME_LOSS )
+                    {
+                        /**
+                         *  If LoRaMAC stack reports a too many frame loss event, it indicates that gateway and device frame counter
+                         *  values are not in sync. The only way to recover from this is to initiate a rejoin procedure to reset 
+                         *  the frame counter at both sides.
+                         */
+                        configPRINTF(( "Too many frame loss detected. Rejoining to reset the session counters" ));
+                        status = prvOTAAJoinNetwork();
+                        if( status != LORAMAC_STATUS_OK )
+                        {   
+                            configPRINTF( ( "Failed to join LoRaWAN network.\r\n" ));
+                            break;
+                        }
+                        else
+                        {
+                            configPRINTF(( "Rejoined LoRaWAN network.\r\n" ));
+                        }
+                    }
+                    else
+                    {
+                        /**
+                         * Frame was sent successfully. Wait for next TX schedule to send uplink thereby obeying fair 
+                         * access policy.
+                         */
+                         
+                        uplink.isConfirmed = LORAWAN_SEND_CONFIRMED_MESSAGES;
+                        uplink.length = 1;
+                        uplink.data[0] = 0xFF;
+                        
+                        ulTxIntervalMs = ( LORAWAN_APPLICATION_TX_INTERVAL_SEC * 1000 ) + randr( -LORAWAN_MAX_JITTER_MS, LORAWAN_MAX_JITTER_MS );
+                        
+                        configPRINTF(( "TX-RX cycle complete. Next TX in %u seconds\r\n", ( ulTxIntervalMs / 1000 ) )); 
+                        
+                        vTaskDelay( pdMS_TO_TICKS( ulTxIntervalMs ) );
+                         
+                    }
+                   
+                }
+               
+            }
         }
+    }
+    else
+    {
+        configPRINTF(( "Failed to start LoRaMAC stack\r\n" ));
     }
 
     vTaskDelete( NULL );
-}
+}  
+
 
 
 /*******************************************************************************************
@@ -725,12 +913,15 @@ static void prvLorawanClassATask( void * params )
 void main( void )
 {
     BoardInitMcu();
-    xLoRaMacResponseQueue = xQueueCreate( LORAWAN_MAX_QUEUED_RESPONSES, sizeof( LoRaMacResponse_t ) );
-    xLoRaMacMessageBuffer = xMessageBufferCreate( ( LORAWAN_MAX_PAYLOAD_LENGTH + LORAWAN_PORT_SIZE + sizeof( size_t ) ) * 10 );
-
-    if( ( xLoRaMacResponseQueue != NULL ) && ( xLoRaMacMessageBuffer != NULL ) )
-    {
-        xTaskCreate( prvLoRaMacTask, "LoRaMac", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY + 5, &xLoRaMacTask );
-        xTaskCreate( prvLorawanClassATask, "LoRaWAN", configMINIMAL_STACK_SIZE * 40, NULL, tskIDLE_PRIORITY + 1, &xLoRaWANTask );
-    }
+    
+    configPRINTF( ( "###### ===== Class A LoRaWAN application ==== ######\n\n" ) );
+    
+    xResponseQueue = xQueueCreate( LORAWAN_RESPONSE_QUEUE_SIZE, sizeof( LoRaWanResponse_t ) );
+    xDownlinkQueue = xQueueCreate( LORAWAN_DOWNLINK_QUEUE_SIZE, sizeof( LoRaWanDowlinkMessage_t ) );
+    
+    configASSERT( xResponseQueue != NULL );    
+    configASSERT( xDownlinkQueue != NULL );
+    
+    xTaskCreate( prvLorawanClassATask, "LoRaWanClassA", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY, &xLoRaWanTask );
+    
 }
