@@ -1,6 +1,6 @@
-# Class-A Demo Application
-Class-A offers lower-powered bidirectional communincation between the device and LoRa Application Endpoint. 
-The Things Network (TTN) has great [diagrams and summaries](https://www.thethingsnetwork.org/docs/lorawan/classes.html) of the different LoRaWAN device classes. 
+# Class-A Demo
+
+Class-A offers low-powered ALOHA based communincation between the end device and LoRa Network Server. Its the most common use-case and should be implemented by all end-devices supporting LoRaWAN. TheThings Network (TTN)  [diagrams and summaries](https://www.thethingsnetwork.org/docs/lorawan/classes.html) shows the communication between end-device and Network Server in Class A. 
 In the default demo state, the device will uplink a _confirmed_ status byte every 5 seconds, and continue to re-send until receiving a server _Confirmed_ response.
 Meanwhile, any downlink data received from the server will be printed out from device.
 
