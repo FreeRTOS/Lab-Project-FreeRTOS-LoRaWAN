@@ -1,8 +1,10 @@
-# Introduction
+Reference implementation of LoRaWAN applications on FreeRTOS
+
+# Class A demo
 
 Class-A offers low-powered ALOHA based communincation between the end device and LoRa Network Server. Its the most common use-case and should be implemented by all end-devices supporting LoRaWAN. TheThings Network (TTN) [diagrams and summaries](https://www.thethingsnetwork.org/docs/lorawan/classes.html) shows the communication between end-device and Network Server in Class A. All communications are initiated by an end-device sending uplink message at any time to the server. End-device opens two receiver slot windows after a successful uplink. Server can choose to send any downlink packets during this window. Both end-device and server can alss attache MAC layer commands (used for control activities) along with their uplink and downlink messages. Both uplink and downlink messages can be either confirmed (an ACK is required from the other party) or unconfirmed (no-ACK required).
 
-# Class A demo
+
 Demo shows a working example of a common class A application. It spawns two tasks:
 
 **LoRaMAC task:** This is a higher priority background task which initializes LoRaMAC stack and waits for any events from Radio layer or MaC layer. All events generated from radio layer is through interrupts. Events are passed using FreeRTOS task notifications which unblocks the LoRaMAC task. Since the task serves interrupt events it runs at a higher priority than other task.
