@@ -98,17 +98,6 @@
  */
 #define LORAWAN_MAX_JITTER_MS    ( 500 )
 
-
-/**
- * @brief Queue size used by application task to schedule a message for transmission.
- * 
- * Common ClassA use case of LoRaWan involves application task wakes up infrequently to read a scensor data for example, sends
- * it uplink and then goes back to sleep again. Hence the queue size is set to 1 by default. However application tasks
- * can wake up at non periodic intervals or send a burst of packets, in which case queue size is used to control the
- * uplink rate.
- */
-#define LORAWAN_UPLINK_QUEUE_SIZE          ( 1 )
-
 /**
  * @brief Queue size used by an application task to block on downlink messages.
  * 
@@ -153,18 +142,12 @@ typedef enum LoRaWanEvent {
     
     /**
      * These are control events generated from LoRaMAC stack. Events are used
-     * by the LoRaWAN control task to perform control activities for class A applications.
+     * by the LoRaWAN task to perform control activities for class A applications.
      */
     LORAWAN_EVENT_LORAMAC_STARTED = 0x1,
     LORAWAN_EVENT_LORAMAC_FAILED = 0x2,
     LORAWAN_EVENT_FRAME_LOSS = 0x4,
     LORAWAN_EVENT_SCHEDULE_UPLINK = 0x8,
-    
-    /**
-     * The events are used by an application task, for example  to check if network is up before sending  uplink.
-     */
-     LORAWAN_EVENT_NETWORK_JOINED = 0x1, 
-     LORAWAN_EVENT_NETWORK_JOIN_FAILED = 0x2
 
 } LoRaWanEvent_t ;
 
@@ -286,7 +269,7 @@ static TaskHandle_t xLoRaMacTask;
  * @brief Task for LoRaWAN class A application.
  *
  * Task sends periodic uplink messages, and also performs control activities like frame loss detection and rejoin procedure,
- * sending empty uplink messages to respond back to network server commands etc..
+ * send empty uplink messages if needed to respond back to network server commands etc.
  * 
  * LoRaWAN  task interacts with LoRaMAC task using task notifications and response queue.
  */
@@ -298,14 +281,6 @@ static TaskHandle_t xLoRaWanTask;
  * The response queue is used to receive responses for queued requests in the same order.
  */
 static QueueHandle_t xResponseQueue;
-
-
-/**
- * @brief Uplink Queue for LoRaWAN.
- *
- * Used by application task to queue messages to be sent uplink.
- */
-static QueueHandle_t xUplinkQueue;
 
 /**
  * @brief Downlink Queue for LoRaWAN.
@@ -357,7 +332,6 @@ static void prvMcpsConfirm( McpsConfirm_t * mcpsConfirm )
     xQueueSend( xResponseQueue, &response, portMAX_DELAY );
 }
 
-
 static void prvMcpsIndication( McpsIndication_t * mcpsIndication )
 {
     
@@ -397,7 +371,6 @@ static void prvMcpsIndication( McpsIndication_t * mcpsIndication )
     }
 }
 
-
 static void prvMlmeIndication( MlmeIndication_t * MlmeIndication )
 {
     LoRaMacEventInfoStatus_t status = MlmeIndication->Status;
@@ -410,10 +383,8 @@ static void prvMlmeIndication( MlmeIndication_t * MlmeIndication )
         {
             xTaskNotifyAndQuery( xLoRaWanTask, LORAWAN_EVENT_SCHEDULE_UPLINK, eSetBits, NULL );
         }
-    }
-        
+    }        
 }
-
 
 static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 {
@@ -803,7 +774,7 @@ static void prvLorawanClassATask( void * params )
             /**
              * Successfully joined a LoRaWAN network. Now the  task runs in an infinite loop,
              * sends periodic uplink message of 1 byte by obeying fair access policy for the LoRaWAN network.
-             * If the MAC has indicated an uplink message to schedule as soon as possible, then it sends
+             * If the MAC has indicated to schedule an uplink message as soon as possible, then it sends
              * an uplink message immediately after the duty cycle wait time. After each uplink it also waits
              * on downlink queue for any messages from the network server.
              */
