@@ -2,6 +2,7 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <BreakpointListItem trigger="" line="407" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../class_a/main.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -24,18 +25,9 @@
   <ProjectSessionItem path="lorawan_demo"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo;freertos"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node;mac"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node;mac;region"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node;radio"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node;radio;sx126x"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;LoRaMAC-Node;system"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;mcu"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;mcu;nordic_nrf52"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;mcu;nordic_nrf52;board"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;mcu;nordic_nrf52;boot"/>
+  <ProjectSessionItem path="lorawan_demo;lorawan_demo;freertos;portable"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo;src"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;src;class_a"/>
+  <ProjectSessionItem path="lorawan_demo;lorawan_demo;System Files"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="lorawan_demo" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -74,13 +66,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="282" useTextEdit="1" useBinaryEdit="0" left="0" path="../../class_a/main.c" selected="0" top="257" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="910" useTextEdit="1" useBinaryEdit="0" left="0" path="../../LoRaMac-node/src/mac/LoRaMac.h" selected="0" top="889" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="2714" useTextEdit="1" useBinaryEdit="0" left="0" path="../../LoRaMac-node/src/mac/LoRaMac.c" selected="0" top="2702" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="393" useTextEdit="1" useBinaryEdit="0" left="0" path="../../mcu/nordic_nrf52/boot/start.c" selected="1" top="388" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="3431" useTextEdit="1" useBinaryEdit="0" left="0" path="../../freertos/freertos_kernel/tasks.c" selected="0" top="3421" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="461" useTextEdit="1" useBinaryEdit="0" left="0" path="../../LoRaMac-node/src/mac/region/Region.c" selected="0" top="451" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="690" useTextEdit="1" useBinaryEdit="0" left="0" path="../../LoRaMac-node/src/mac/region/RegionUS915.c" selected="0" top="676" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="134" useTextEdit="1" useBinaryEdit="0" left="0" path="../../main.c" selected="1" top="119" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN/class_a" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

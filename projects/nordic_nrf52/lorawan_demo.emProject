@@ -121,6 +121,26 @@
           <file file_name="../../LoRaMac-node/src/mac/region/RegionUS915.h" />
         </folder>
       </folder>
+      <folder Name="radio">
+        <folder Name="sx126x">
+          <file file_name="../../LoRaMac-node/src/radio/sx126x/radio.c" />
+          <file file_name="../../LoRaMac-node/src/radio/sx126x/sx126x.c" />
+          <file file_name="../../LoRaMac-node/src/radio/sx126x/sx126x.h" />
+        </folder>
+      </folder>
+      <folder Name="system">
+        <file file_name="../../LoRaMac-node/src/system/delay.h" />
+        <file file_name="../../LoRaMac-node/src/system/fifo.c" />
+        <file file_name="../../LoRaMac-node/src/system/fifo.h" />
+        <file file_name="../../LoRaMac-node/src/system/gpio.h" />
+        <file file_name="../../LoRaMac-node/src/system/nvmm.c" />
+        <file file_name="../../LoRaMac-node/src/system/nvmm.h" />
+        <file file_name="../../LoRaMac-node/src/system/serial.h" />
+        <file file_name="../../LoRaMac-node/src/system/spi.h" />
+        <file file_name="../../LoRaMac-node/src/system/systime.c" />
+        <file file_name="../../LoRaMac-node/src/system/systime.h" />
+        <file file_name="../../LoRaMac-node/src/system/timer.h" />
+      </folder>
       <folder Name="peripherals">
         <folder Name="soft-se">
           <file file_name="../../LoRaMac-node/src/peripherals/soft-se/aes.c" />
@@ -133,27 +153,6 @@
           <file file_name="../../LoRaMac-node/src/peripherals/soft-se/soft-se-hal.h" />
         </folder>
       </folder>
-      <folder Name="radio">
-        <folder Name="sx126x">
-          <file file_name="../../LoRaMac-node/src/radio/sx126x/radio.c" />
-          <file file_name="../../LoRaMac-node/src/radio/sx126x/sx126x.c" />
-          <file file_name="../../LoRaMac-node/src/radio/sx126x/sx126x.h" />
-        </folder>
-      </folder>
-      <folder Name="system">
-        <file file_name="../../LoRaMac-node/src/system/delay.h" />
-        <file file_name="../../LoRaMac-node/src/system/fifo.c" />
-        <file file_name="../../LoRaMac-node/src/system/fifo.h" />
-        <file file_name="../../LoRaMac-node/src/system/gpio.c" />
-        <file file_name="../../LoRaMac-node/src/system/gpio.h" />
-        <file file_name="../../LoRaMac-node/src/system/nvmm.c" />
-        <file file_name="../../LoRaMac-node/src/system/nvmm.h" />
-        <file file_name="../../LoRaMac-node/src/system/serial.h" />
-        <file file_name="../../LoRaMac-node/src/system/spi.h" />
-        <file file_name="../../LoRaMac-node/src/system/systime.c" />
-        <file file_name="../../LoRaMac-node/src/system/systime.h" />
-        <file file_name="../../LoRaMac-node/src/system/timer.h" />
-      </folder>
     </folder>
     <folder Name="freertos-osal">
       <file file_name="../../freertos-osal/delay.c" />
@@ -163,6 +162,7 @@
           c_preprocessor_definitions="LORAWAN_USE_EXTERNAL_TIMERS" />
       </file>
       <file file_name="../../freertos-osal/timer.c" />
+      <file file_name="../../freertos-osal/gpio.c" />
     </folder>
     <folder Name="src">
       <file file_name="../../freertos/libraries/c_sdk/standard/common/logging/iot_logging_task_dynamic_buffers.c" />
@@ -195,11 +195,9 @@
         <folder Name="board">
           <file file_name="../../mcu/nordic_nrf52/board/pinName-board.h" />
           <file file_name="../../mcu/nordic_nrf52/board/pinName-ioe.h" />
-          <file file_name="../../mcu/nordic_nrf52/board/gpio-board.c" />
           <file file_name="../../mcu/nordic_nrf52/board/rtc-board.c" />
           <file file_name="../../mcu/nordic_nrf52/board/board.c" />
           <file file_name="../../mcu/nordic_nrf52/board/sx1262mbxcas-board.c" />
-          <file file_name="../../mcu/nordic_nrf52/board/gpio-board.h" />
           <file file_name="../../mcu/nordic_nrf52/board/utilities.h" />
         </folder>
         <file file_name="../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_spi.c" />
