@@ -163,6 +163,7 @@
       </file>
       <file file_name="../../freertos-osal/timer.c" />
       <file file_name="../../freertos-osal/gpio.c" />
+      <file file_name="../../freertos-osal/board.c" />
     </folder>
     <folder Name="src">
       <file file_name="../../freertos/libraries/c_sdk/standard/common/logging/iot_logging_task_dynamic_buffers.c" />
@@ -196,7 +197,6 @@
           <file file_name="../../mcu/nordic_nrf52/board/pinName-board.h" />
           <file file_name="../../mcu/nordic_nrf52/board/pinName-ioe.h" />
           <file file_name="../../mcu/nordic_nrf52/board/rtc-board.c" />
-          <file file_name="../../mcu/nordic_nrf52/board/board.c" />
           <file file_name="../../mcu/nordic_nrf52/board/sx1262mbxcas-board.c" />
           <file file_name="../../mcu/nordic_nrf52/board/utilities.h" />
         </folder>

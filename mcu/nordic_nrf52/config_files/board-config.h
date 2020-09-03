@@ -41,6 +41,15 @@ extern "C"
 {
 #endif
 
+/**
+ * @brief EUI and keys that needs to be provisioned for device identity and security.
+ */
+ 
+#error "Please configure DEV EUI, Join EUI and App NWK key to run the demo"
+
+#define DEV_EUI       {}
+#define JOIN_EUI      {}
+#define APP_NWK_KEY   {}
 
 
 #define BOARD_TCXO_WAKEUP_TIME                      0

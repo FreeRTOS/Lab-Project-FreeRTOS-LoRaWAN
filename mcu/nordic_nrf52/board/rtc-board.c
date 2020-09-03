@@ -34,7 +34,6 @@
 #include "timer.h"
 #include "systime.h"
 #include "gpio.h"
-#include "lpm-board.h"
 #include "rtc-board.h"
 
 

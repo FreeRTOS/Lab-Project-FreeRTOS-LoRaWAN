@@ -7,6 +7,9 @@
 #include "utilities.h"
 #include "radio.h"
 #include "queue.h"
+#include "spi.h"
+#include "sx126x-board.h"
+#include  "board-config.h"
 
 /*
  * @brief Default data rate used for uplink messages.
@@ -116,16 +119,6 @@
  */
 #define LORAWAN_RESPONSE_QUEUE_SIZE        ( 3 ) 
 
-
-/**
- * @brief EUI and keys that needs to be provisioned for device identity and security.
- */
- 
-#error "Please configure DEV EUI, Join EUI and App NWK key to run the demo"
-
-#define DEV_EUI       {}
-#define JOIN_EUI      {}
-#define APP_NWK_KEY   {}
 
 /**
  * @brief Events used for inter task notifications.
@@ -883,8 +876,11 @@ static void prvLorawanClassATask( void * params )
 * *****************************************************************************************/
 void main( void )
 {
-    BoardInitMcu();
-    
+    SpiInit(&SX126x.Spi, SPI_1, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, NC );
+    SX126xIoInit();
+    //RtcInit();
+    //EepromMcuInit();
+
     configPRINTF( ( "###### ===== Class A LoRaWAN application ==== ######\n\n" ) );
     
     xResponseQueue = xQueueCreate( LORAWAN_RESPONSE_QUEUE_SIZE, sizeof( LoRaWanResponse_t ) );

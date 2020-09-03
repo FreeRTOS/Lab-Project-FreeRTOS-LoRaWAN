@@ -24,8 +24,7 @@
  <Project>
   <ProjectSessionItem path="lorawan_demo"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;freertos"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;freertos;portable"/>
+  <ProjectSessionItem path="lorawan_demo;lorawan_demo;nRF5_SDK_15.2.0"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo;src"/>
   <ProjectSessionItem path="lorawan_demo;lorawan_demo;System Files"/>
  </Project>
@@ -66,7 +65,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="134" useTextEdit="1" useBinaryEdit="0" left="0" path="../../main.c" selected="1" top="119" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="134" useTextEdit="1" useBinaryEdit="0" left="0" path="../../main.c" selected="1" top="171" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

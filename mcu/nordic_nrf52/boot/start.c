@@ -28,6 +28,7 @@
 #include "bsp_btn_ble.h"
 #include "app_uart.h"
 #include "queue.h"
+#include "nrf_drv_gpiote.h"
 
 #include "SEGGER_RTT.h"
 
@@ -203,6 +204,9 @@ static void init_drivers( void )
     xUARTTxComplete = xSemaphoreCreateBinary();
     prvUartInit();
     prvClockInit();
+
+    // Radio's DIO1 will route irq line through gpio, hence gpiote
+    configASSERT(NRF_SUCCESS == nrf_drv_gpiote_init());
 
     /* Activate deep sleep mode. */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
