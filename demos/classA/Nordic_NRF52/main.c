@@ -9,7 +9,8 @@
 #include "queue.h"
 #include "spi.h"
 #include "sx126x-board.h"
-#include  "board-config.h"
+#include "board-config.h"
+#include "classA.h" 
 
 /*
  * @brief Default data rate used for uplink messages.
@@ -874,7 +875,7 @@ static void prvLorawanClassATask( void * params )
 /*******************************************************************************************
 * main
 * *****************************************************************************************/
-void main( void )
+void vClassACreate( void )
 {
     SpiInit(&SX126x.Spi, SPI_1, RADIO_MOSI, RADIO_MISO, RADIO_SCLK, NC );
     SX126xIoInit();
@@ -890,5 +891,4 @@ void main( void )
     configASSERT( xDownlinkQueue != NULL );
     
     xTaskCreate( prvLorawanClassATask, "LoRaWanClassA", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY, &xLoRaWanTask );
-    
 }

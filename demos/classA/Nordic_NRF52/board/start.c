@@ -29,6 +29,7 @@
 #include "app_uart.h"
 #include "queue.h"
 #include "nrf_drv_gpiote.h"
+#include "classA.h"
 
 #include "SEGGER_RTT.h"
 
@@ -373,20 +374,9 @@ void vApplicationIdleHook( void )
     }
 }
 
-/*-----------------------------------------------------------*/
-
-/*
- * User will define their own main
- */
-extern void main( void );
-
-
-void vApplicationDaemonTaskStartupHook( void )
+void vApplicationDaemonTaskStartupHook() 
 {
-    /* Start user application */
-    main();
 }
-
 
 /*-----------------------------------------------------------*/
 
@@ -394,7 +384,7 @@ void vApplicationDaemonTaskStartupHook( void )
  * Assembly bootloader will continue execution here after it is complete. 
  * We separate hardware setup here, and leave main for user application.
  */
-int start_kernel( int argc, char ** argv )
+int main( int argc, char ** argv )
 {
     /* Perform any hardware initialization that does not require the RTOS to be unning.  */
     init_drivers();
@@ -402,6 +392,10 @@ int start_kernel( int argc, char ** argv )
     xLoggingTaskInitialize( mainLOGGING_TASK_STACK_SIZE,
                             tskIDLE_PRIORITY,
                             mainLOGGING_MESSAGE_QUEUE_LENGTH );
+
+
+    /* Add user tasks */
+    vClassACreate();
 
     vTaskStartScheduler();
 
