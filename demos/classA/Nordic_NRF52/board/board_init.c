@@ -29,7 +29,6 @@
 #include "app_uart.h"
 #include "queue.h"
 #include "nrf_drv_gpiote.h"
-#include "classA.h"
 
 #include "SEGGER_RTT.h"
 
@@ -199,7 +198,7 @@ static void prvTimersInit( void )
 }
 
 
-static void init_drivers( void )
+void board_init( void )
 {
     /* Initialize modules.*/
     xUARTTxComplete = xSemaphoreCreateBinary();
@@ -213,6 +212,10 @@ static void init_drivers( void )
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
     prvTimersInit();
     UARTqueue = xQueueCreate( 1, sizeof( INPUTMessage_t ) );
+
+    xLoggingTaskInitialize( mainLOGGING_TASK_STACK_SIZE,
+                            tskIDLE_PRIORITY,
+                            mainLOGGING_MESSAGE_QUEUE_LENGTH );
 }
 
 
@@ -377,28 +380,3 @@ void vApplicationIdleHook( void )
 void vApplicationDaemonTaskStartupHook() 
 {
 }
-
-/*-----------------------------------------------------------*/
-
-/*
- * Assembly bootloader will continue execution here after it is complete. 
- * We separate hardware setup here, and leave main for user application.
- */
-int main( int argc, char ** argv )
-{
-    /* Perform any hardware initialization that does not require the RTOS to be unning.  */
-    init_drivers();
-
-    xLoggingTaskInitialize( mainLOGGING_TASK_STACK_SIZE,
-                            tskIDLE_PRIORITY,
-                            mainLOGGING_MESSAGE_QUEUE_LENGTH );
-
-
-    /* Add user tasks */
-    vClassACreate();
-
-    vTaskStartScheduler();
-
-    return 0;
-}
-

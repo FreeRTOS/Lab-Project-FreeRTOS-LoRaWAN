@@ -10,7 +10,7 @@
 #include "spi.h"
 #include "sx126x-board.h"
 #include "board-config.h"
-#include "classA.h" 
+#include "board_init.h"
 
 /*
  * @brief Default data rate used for uplink messages.
@@ -873,7 +873,7 @@ static void prvLorawanClassATask( void * params )
 
 
 /*******************************************************************************************
-* main
+* Application Startup 
 * *****************************************************************************************/
 void vClassACreate( void )
 {
@@ -891,4 +891,20 @@ void vClassACreate( void )
     configASSERT( xDownlinkQueue != NULL );
     
     xTaskCreate( prvLorawanClassATask, "LoRaWanClassA", configMINIMAL_STACK_SIZE * 20, NULL, tskIDLE_PRIORITY, &xLoRaWanTask );
+}
+
+/*******************************************************************************************
+* Main
+* *****************************************************************************************/
+int main( int argc, char ** argv )
+{
+    /* Perform any hardware initialization that can or must be done before RTOS is running */
+    board_init();
+
+    /* Add user tasks */
+    vClassACreate();
+
+    vTaskStartScheduler();
+
+    return 0;
 }
