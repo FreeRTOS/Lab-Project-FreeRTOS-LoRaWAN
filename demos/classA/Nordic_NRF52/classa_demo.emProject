@@ -248,7 +248,7 @@
       debug_initial_breakpoint="start_kernel"
       debug_startup_completion_point="start_kernel"
       gcc_entry_point="Reset_Handler"
-      link_use_linker_script_file="Yes"
+      link_use_linker_script_file="No"
       linker_printf_fmt_level="long long"
       linker_printf_wchar_enabled="Yes"
       linker_printf_width_precision_supported="Yes"
