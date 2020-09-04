@@ -1,0 +1,279 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="classa_demo" target="8" version="2">
+  <project Name="classa_demo">
+    <configuration
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_linker_heap_size="1024"
+      arm_linker_process_stack_size="0"
+      arm_linker_stack_size="1024"
+      arm_linker_variant="SEGGER"
+      arm_simulator_memory_simulation_parameter="RX 00000000,00100000,FFFFFFFF;RWX 20000000,00040000,CDCDCDCD"
+      arm_target_device_name="nRF52840_xxAA"
+      arm_target_interface_type="SWD"
+      debug_target_connection="J-Link"
+      link_linker_script_file="$(ProjectDir)/SEGGER_Flash.icf"
+      linker_output_format="hex"
+      linker_section_placements_segments="FLASH RX 0x00000000 0x00100000;RAM RWX 0x20000000 0x00040000"
+      project_directory=""
+      project_type="Executable" />
+    <folder Name="CommonIO">
+      <file file_name="../../../freertos/libraries/abstractions/common_io/include/iot_gpio.h" />
+      <file file_name="../../../freertos/libraries/abstractions/common_io/include/iot_spi.h" />
+      <file file_name="../../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_gpio.c" />
+      <file file_name="../../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/iot_spi.c" />
+    </folder>
+    <folder Name="freertos">
+      <folder Name="include">
+        <file file_name="../../../freertos/freertos_kernel/include/atomic.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/croutine.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/deprecated_definitions.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/event_groups.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/FreeRTOS.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/list.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/message_buffer.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/mpu_prototypes.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/mpu_wrappers.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/portable.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/projdefs.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/queue.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/semphr.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/stack_macros.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/StackMacros.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/stdint.readme" />
+        <file file_name="../../../freertos/freertos_kernel/include/stream_buffer.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/task.h" />
+        <file file_name="../../../freertos/freertos_kernel/include/timers.h" />
+      </folder>
+      <file file_name="../../../freertos/freertos_kernel/croutine.c" />
+      <file file_name="../../../freertos/freertos_kernel/event_groups.c" />
+      <file file_name="../../../freertos/freertos_kernel/list.c" />
+      <file file_name="../../../freertos/freertos_kernel/queue.c" />
+      <file file_name="../../../freertos/freertos_kernel/Quick_Start_Guide.url" />
+      <file file_name="../../../freertos/freertos_kernel/stream_buffer.c" />
+      <file file_name="../../../freertos/freertos_kernel/tasks.c" />
+      <file file_name="../../../freertos/freertos_kernel/timers.c" />
+      <folder Name="License">
+        <file file_name="../../../freertos/freertos_kernel/License/license.txt" />
+      </folder>
+      <folder Name="portable">
+        <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52/port.c" />
+        <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52/portmacro.h" />
+        <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52/port_cmsis.c" />
+        <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52/port_cmsis_systick.c" />
+        <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52/portmacro_cmsis.h" />
+      </folder>
+      <file file_name="../../../freertos/freertos_kernel/portable/MemMang/heap_4.c" />
+    </folder>
+    <folder Name="LoRaMAC-Node">
+      <folder Name="mac">
+        <folder Name="region">
+          <file file_name="../../../LoRaMac-node/src/mac/region/Region.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/Region.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionAS923.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionAS923.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionAU915.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionAU915.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCN470.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCN470.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCN779.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCN779.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCommon.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionCommon.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionEU433.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionEU433.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionEU868.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionEU868.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionIN865.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionIN865.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionKR920.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionKR920.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionRU864.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionRU864.h" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionUS915.c" />
+          <file file_name="../../../LoRaMac-node/src/mac/region/RegionUS915.h" />
+        </folder>
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMac.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMac.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacAdr.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacAdr.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacClassB.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacClassB.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacClassBConfig.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacCommands.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacCommands.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacConfirmQueue.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacConfirmQueue.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacCrypto.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacCrypto.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacHeaderTypes.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacMessageTypes.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacParser.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacParser.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacSerializer.c" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacSerializer.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacTest.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/LoRaMacTypes.h" />
+        <file file_name="../../../LoRaMac-node/src/mac/secure-element.h" />
+      </folder>
+      <folder Name="peripherals">
+        <folder Name="soft-se">
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/aes.c" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/aes.h" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/cmac.c" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/cmac.h" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/se-identity.h" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/soft-se.c" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/soft-se-hal.c" />
+          <file file_name="../../../LoRaMac-node/src/peripherals/soft-se/soft-se-hal.h" />
+        </folder>
+      </folder>
+      <folder Name="radio">
+        <folder Name="sx126x">
+          <file file_name="../../../LoRaMac-node/src/radio/sx126x/radio.c" />
+          <file file_name="../../../LoRaMac-node/src/radio/sx126x/sx126x.c" />
+          <file file_name="../../../LoRaMac-node/src/radio/sx126x/sx126x.h" />
+        </folder>
+      </folder>
+      <folder Name="system">
+        <file file_name="../../../LoRaMac-node/src/system/delay.h" />
+        <file file_name="../../../LoRaMac-node/src/system/fifo.c" />
+        <file file_name="../../../LoRaMac-node/src/system/fifo.h" />
+        <file file_name="../../../LoRaMac-node/src/system/gpio.h" />
+        <file file_name="../../../LoRaMac-node/src/system/spi.h" />
+        <file file_name="../../../LoRaMac-node/src/system/timer.h" />
+        <file file_name="../../../freertos_osal/board.c" />
+        <file file_name="../../../freertos_osal/board.h" />
+        <file file_name="../../../freertos_osal/delay.c" />
+        <file file_name="../../../freertos_osal/gpio.c" />
+        <file file_name="../../../freertos_osal/spi.c" />
+        <file file_name="../../../freertos_osal/timer.c" />
+        <file file_name="../../../LoRaMac-node/src/system/systime.c" />
+        <file file_name="../../../LoRaMac-node/src/system/systime.h" />
+      </folder>
+      <folder Name="nrf52">
+        <file file_name="../../../boards/Nordic_NRF52/pinName-board.h" />
+        <file file_name="../../../boards/Nordic_NRF52/pinName-ioe.h" />
+        <file file_name="../../../boards/Nordic_NRF52/rtc-board.c" />
+        <file file_name="../../../boards/Nordic_NRF52/sx1262mbxcas-board.c" />
+        <file file_name="../../../boards/Nordic_NRF52/utilities.h" />
+      </folder>
+      <file file_name="../../../LoRaMac-node/src/boards/mcu/utilities.c" />
+    </folder>
+    <folder Name="nRF5_SDK_15.2.0">
+      <folder Name="components">
+        <folder Name="libraries">
+          <folder Name="uart">
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/uart/app_uart.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/uart/app_uart.h" />
+          </folder>
+          <folder Name="util">
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_error.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_error.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_error_handler_gcc.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_error_weak.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_error_weak.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_util_platform.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/app_util_platform.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/nrf_assert.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util/nrf_assert.h" />
+          </folder>
+          <folder Name="timer">
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/timer/app_timer.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/timer/app_timer_freertos.c" />
+          </folder>
+        </folder>
+      </folder>
+      <folder Name="modules">
+        <folder Name="nrfx">
+          <folder Name="drivers">
+            <folder Name="include">
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_clock.h" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_gpiote.h" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_spim.h" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_uart.h" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include/nrfx_uarte.h" />
+            </folder>
+            <folder Name="src">
+              <folder Name="prs">
+                <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/prs/nrfx_prs.c" />
+                <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/prs/nrfx_prs.h" />
+              </folder>
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_clock.c" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_gpiote.c" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_spim.c" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_uart.c" />
+              <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_uarte.c" />
+            </folder>
+          </folder>
+        </folder>
+      </folder>
+      <folder Name="integration">
+        <folder Name="nrfx">
+          <folder Name="legacy">
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_clock.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_clock.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_gpiote.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_spi.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_spi.h" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_uart.c" />
+            <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy/nrf_drv_uart.h" />
+          </folder>
+        </folder>
+      </folder>
+    </folder>
+    <folder Name="board_code">
+      <file file_name="board/flash_placement.xml" />
+      <file file_name="board/SEGGER_HardFaultHandler.c" />
+      <file file_name="board/SEGGER_RTT.c" />
+      <file file_name="board/SEGGER_RTT.h" />
+      <file file_name="board/SEGGER_RTT_Conf.h" />
+      <file file_name="board/SEGGER_RTT_Syscalls_SES.c" />
+      <file file_name="board/start.c" />
+      <file file_name="board/thumb_crt0.s" />
+      <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/nrf52840.h" />
+      <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf_common.s" />
+      <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/ses_startup_nrf52840.s" />
+      <file file_name="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk/system_nrf52.c" />
+    </folder>
+    <configuration
+      Name="Debug"
+      arm_linker_variant="GNU"
+      c_preprocessor_definitions="__SIZEOF_WCHAR_T=4 ;__ARM_ARCH_7EM__;__SES_ARM;__ARM_ARCH_FPV4_SP_D16__;__SES_VERSION=41600;DEBUG;DEBUG_NRF;NRF52840_XXAA;BOARD_PCA10056;LORAWAN_USE_EXTERNAL_TIMERS;APP_ENTRY_POINT=start_kernel;__FREERTOS;SDK_MUTEX_ENABLE;SWI_DISABLE0;SVC_INTERFACE_CALL_AS_NORMAL_FUNCTION;RETARGET_ENABLED;INITIALIZE_USER_SECTIONS;FLOAT_ABI_HARD;ENABLE_DEBUG_LOG_SUPPORT;CONFIG_GPIO_AS_PINRESET;REGION_US915"
+      c_user_include_directories="$(ProjectDir)/../../../freertos/freertos_kernel/include;$(ProjectDir)/../../../boards;$(ProjectDir)/../../../boards/Nordic_NRF52;$(ProjectDir)/config;$(ProjectDir)/board;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/svc;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fifo;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/uart;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/stack_info;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/queue;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_hw;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/nrf_sw;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_flags;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mutex;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/sensorsim;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fds;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/fstorage;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic_fifo;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_advertising;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/common;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/boards;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_gatt;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/ble_services/ble_nus;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/nrf_ble_qwr;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/atomic;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/balloc;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/bsp;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/button;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/delay;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/experimental_section_vars;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/hardfault;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/log/src;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/mem_manager;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/memobj;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/ringbuf;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/strerror;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/timer;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/util;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cifra;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/ble/peer_manager;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/common;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/s140/headers;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/softdevice/mbr/nrf52840/headers;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/micro_ecc;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/mbedtls;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/toolchain/cmsis/include;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/fprintf;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/nrf_cc310/include;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/segger_rtt;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/cc310_bl;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/components/libraries/crypto/backend/oberon;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/integration/nrfx/legacy;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/include;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/hal;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/mdk;$(ProjectDir)/../../../freertos/vendors/nordic/boards/nrf52840-dk/aws_demos/config_files;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/GCC/nrf52;$(ProjectDir)/../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/external/freertos/portable/CMSIS/nrf52;$(ProjectDir)/../../../LoRaMac-node/src/mac;$(ProjectDir)/../../../LoRaMac-node/src/mac/region;$(ProjectDir)/../../../LoRaMac-node/src/system;$(ProjectDir)/../../../LoRaMac-node/src/radio;$(ProjectDir)/../../../LoRaMac-node/src/radio/sx126x;$(ProjectDir)/../../../LoRaMac-node/src/peripherals/soft-se;$(ProjectDir)/../../../freertos/libraries/abstractions/common_io/include;$(ProjectDir)/../../../freertos/vendors/nordic/boards/nrf52840-dk/ports/common_io/config;$(ProjectDir)/../../../freertos/libraries/c_sdk/standard//common/include/;."
+      debug_initial_breakpoint="start_kernel"
+      debug_startup_completion_point="start_kernel"
+      gcc_entry_point="Reset_Handler"
+      link_use_linker_script_file="Yes"
+      linker_printf_fmt_level="long long"
+      linker_printf_wchar_enabled="Yes"
+      linker_printf_width_precision_supported="Yes"
+      linker_scanf_fmt_level="long long"
+      linker_section_placement_file="board/flash_placement.xml" />
+    <folder Name="config">
+      <file file_name="config/board-config.h" />
+      <file file_name="config/FreeRTOSConfig.h" />
+      <file file_name="config/iot_gpio_config.h" />
+      <file file_name="config/sdk_config.h" />
+    </folder>
+    <file file_name="main.c" />
+    <folder Name="logging">
+      <file file_name="../../../freertos/libraries/c_sdk/standard/common/logging/iot_logging_task_dynamic_buffers.c" />
+    </folder>
+  </project>
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="None"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 1" />
+</solution>

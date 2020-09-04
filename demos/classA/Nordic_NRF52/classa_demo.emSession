@@ -2,7 +2,6 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <BreakpointListItem trigger="" line="407" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../../class_a/main.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -22,11 +21,29 @@
   <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="lorawan_demo" radix="16" sizeText="" addressText=""/>
  </Memory4>
  <Project>
-  <ProjectSessionItem path="lorawan_demo"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;nRF5_SDK_15.2.0"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;src"/>
-  <ProjectSessionItem path="lorawan_demo;lorawan_demo;System Files"/>
+  <ProjectSessionItem path="classa_demo"/>
+  <ProjectSessionItem path="classa_demo;classa_demo"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;config"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;logging"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;mac"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;mac;region"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;nrf52"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;peripherals"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;peripherals;soft-se"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;radio"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;radio;sx126x"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;system"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;integration"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;integration;nrfx"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;integration;nrfx;legacy"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules;nrfx"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules;nrfx;drivers"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules;nrfx;drivers;include"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules;nrfx;drivers;src"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;nRF5_SDK_15.2.0;modules;nrfx;drivers;src;prs"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="lorawan_demo" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -47,13 +64,7 @@
   <Trace enabled="Yes"/>
  </TraceWindow>
  <Watch1>
-  <Watches active="1" update="Never">
-   <Watchpoint expression="txDoneTick" name="txDoneTick" radix="10" linenumber="868" filename="../../LoRaMac-node/src/mac/LoRaMac.c"/>
-   <Watchpoint expression="rx2Timeout" name="rx2Timeout" radix="10" linenumber="1357" filename="../../LoRaMac-node/src/mac/LoRaMac.c"/>
-   <Watchpoint expression="rx2start" name="rx2start" radix="10" linenumber="1746" filename="../../LoRaMac-node/src/mac/LoRaMac.c"/>
-   <Watchpoint expression="rx1Timeout" name="rx1Timeout" radix="10" linenumber="1357" filename="../../LoRaMac-node/src/mac/LoRaMac.c"/>
-   <Watchpoint expression="rx1start" name="rx1start" radix="10" linenumber="1732" filename="../../LoRaMac-node/src/mac/LoRaMac.c"/>
-  </Watches>
+  <Watches active="1" update="Never"/>
  </Watch1>
  <Watch2>
   <Watches active="0" update="Never"/>
@@ -65,7 +76,17 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="134" useTextEdit="1" useBinaryEdit="0" left="0" path="../../main.c" selected="1" top="171" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="config/FreeRTOSConfig.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="33" useTextEdit="1" useBinaryEdit="0" left="0" path="config/iot_gpio_config.h" selected="0" top="30" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="16" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/hal/nrf_gpio.h" selected="0" top="4" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="config/sdk_config.h" selected="0" top="1901" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="47" useTextEdit="1" useBinaryEdit="0" left="0" path="config/board-config.h" selected="1" top="34" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="27" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../freertos_osal/gpio.c" selected="0" top="6" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="104" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../freertos/vendors/nordic/nRF5_SDK_15.2.0/modules/nrfx/drivers/src/nrfx_gpiote.c" selected="0" top="92" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="35" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/system/gpio.h" selected="0" top="29" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="130" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMac.h" selected="0" top="106" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="25" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/peripherals/soft-se/soft-se-hal.c" selected="0" top="15" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="29" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/radio/sx126x/radio.c" selected="0" top="0" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="lorawan_demo" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="classa_demo" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/FreeRTOS-LoRaWAN/LoRaMac-node/src/boards/mcu" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
