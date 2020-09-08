@@ -17,13 +17,13 @@ All events from MAC layer to application are sent using light weight task notifi
 
 **Low Power Mode:** An important feature of class A based communication is it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
 
-# Supported Platforms
+## Supported Platforms
 Vendor | MCU | LoRa Radios | IDE 
 |----|----|----|----
 Nordic | NRF52840-DK | sx1262mb2cas | Segger Embedded Studio (SES)
 
 
-# Running the Demo on Nordic NRf52840
+## Running the demo on Nordic NRf52840
 ### Download and View the Code
 The demo leverages open-source [FreeRTOS kernel and libraries](https://github.com/aws/amazon-freertos) and 
 a slightly altered fork of [LoraMac-node stack](https://github.com/dachalco/LoRaMac-node).
