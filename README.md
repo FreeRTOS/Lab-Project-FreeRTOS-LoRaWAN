@@ -11,31 +11,30 @@ Demo shows a working example of a common class A application. It spawns two task
 
 **Note:** Since the radio interrupt handler uses FreeRTOS API for task notifications, the priority for radio interrupts should be set less than or equal to  `configMAX_SYSCALL_INTERRUPT_PRIORITY` as mentioned in FreeRTOS doc [here](https://www.freertos.org/a00110.html#kernel_priority). This means an interrupt can be delayed due to FreeRTOS kernel code execution.
 
-**LoRaWAN Class A task:** Task behaves like a common Class A application. It sends an uplink message periodically at an interval configured to follow the fair access policy defined for a LoRaWAN network and region. There are also other parameters like data rate, SF, Bandwidth, payload length etc. which needs to be tuned based on how far is the device from gateway, how many devices are connecting to gateway, application requirements etc. If MAC layer indicates that an uplink needs to be send to flush out any pending responses to MAC commands from server, then it sends an empty uplink immediately. If a frame loss is detected by MAC layer, then it triggers a re-join procedure to reset the frame counters.
+**LoRaWAN Class A task:** Task behaves like a common Class A application. It sends an uplink message periodically at an interval configured to follow the fair access policy defined for a LoRaWAN network and region. There are also other parameters like data rate, SF, bandwidth, payload length etc. which needs to be tuned based on how far is the device from gateway, how many devices are connecting to gateway, application requirements etc. If MAC layer indicates that an uplink needs to be send to flush out any pending responses to MAC commands from server, then it sends an empty uplink immediately. If a frame loss is detected by MAC layer, then it triggers a re-join procedure to reset the frame counters.
 
-All events from MAC layer to application are exchaged using light weight task notifications. LoRaWAN allows multiple requests for the server to be piggy-backed to an uplink message. The responses to these requests are received by application in order using a FreeRTOS queue. A downlink queue exists in case application wants to receive multiple items without sending an actual payload uplink (by sending empty uplinks).
+All events from MAC layer to application are sent using light weight task notifications. LoRaWAN allows multiple requests for the server to be piggy-backed to an uplink message. The responses to these requests are received by application in order using a queue. A downlink queue exists in case application wants to read multiple payloads received at once, before sending an uplink payload.
 
 **Low Power Mode:** An important feature of class A based communication is it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
 
-# Dependencies
-Usage | Item
-----|----
-MCU| nrf42840-dk 
-Radio | sx1262mb2cas (915 MHz)
-IDE | Segger Embedded Studio (SES)
+# Supported Platforms
+Vendor | MCU | LoRa Radios | IDE 
+|----|----|----|----
+Nordic | NRF52840-DK | sx1262mb2cas | Segger Embedded Studio (SES)
 
 
-# Running the Demo
+# Running the Demo on Nordic NRf52840
 ### Download and View the Code
-The demo leverages open-source [FreeRTOS Libraries](https://github.com/aws/amazon-freertos) and 
+The demo leverages open-source [FreeRTOS kernel and libraries](https://github.com/aws/amazon-freertos) and 
 a slightly altered fork of [LoraMac-node stack](https://github.com/dachalco/LoRaMac-node).
 
-1) Download this repo as well as used libraries:
+1) Download the repository along with the dependent repositories:
 ```
 git clone --recurse-submodules git@github.com:ravibhagavandas/FreeRTOS-LoRaWAN.git
 ```
+2) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
 
-2) Now enter the SES IDE, select `Open Solution`, and open `FreeRTOS-LoRaWAN/projects/nordic_nrf52/lorawan_demo.emProject`.
+2) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click on `open`. 
 
 ### Create a TTN account, TTN Appication, and Add Your Device
 1) Navigate to [TTN home page](https://www.thethingsnetwork.org/).
