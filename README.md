@@ -34,7 +34,7 @@ git clone --recurse-submodules git@github.com:ravibhagavandas/FreeRTOS-LoRaWAN.g
 ```
 2) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
 
-2) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click on `open`. 
+2) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click `Open`. 
 
 ### Create a TTN account, TTN Appication, and Add Your Device
 1) Navigate to [TTN home page](https://www.thethingsnetwork.org/).
