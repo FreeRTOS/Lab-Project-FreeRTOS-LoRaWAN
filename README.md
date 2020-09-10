@@ -55,7 +55,7 @@ Before building the code, you'll need to supply your TTN device parameters for t
 
 ### Build and Run the Code
 1) Connect your nrf52840-dk.
-2) In SES `Build` Menu, select `Build lorawan_demo`.
+2) In SES `Build` Menu, select `Build classa_demo`.
 3) In SES `Debug` Menu, select `Go`. This will flash and run the demo in debug mode.
 
 There is a breakpoint at the beginning of the program. When you're ready, you can continue exectution.
