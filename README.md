@@ -1,4 +1,4 @@
-Reference implementation of LoRaWAN application on FreeRTOS
+Reference implementation of LoRaWAN connectiivty on FreeRTOS. This is a FreeRTOS adaptation of Semtech's LoRaMAC Node implementation.
 
 # Class A demo
 
