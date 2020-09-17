@@ -1,21 +1,24 @@
-Reference implementation of LoRaWAN connectiivty on FreeRTOS. This is a FreeRTOS adaptation of Semtech's LoRaMAC Node implementation.
+Reference implementation of LoRaWAN connectivity on FreeRTOS. The project is a FreeRTOS adaptation of Semtech's LoRaMAC Node implementation.
+# Getting Statted
 
-# Class A demo
+## Class A demo
 
 Class-A offers low-powered communincation between the end device and LoRa Network Server. Its the most common use-case and should be implemented by all end-devices supporting LoRaWAN. TheThings Network (TTN) [diagrams and summaries](https://www.thethingsnetwork.org/docs/lorawan/classes.html) shows the communication between end-device and Network Server in Class A. All communications are initiated by an end-device sending uplink message at any time to the server. End-device opens two receiver slot windows after a successful uplink. Server can choose to send any downlink packets during this window. Both end-device and server can alss attache MAC layer commands (used for control activities) along with their uplink and downlink messages. Both uplink and downlink messages can be either confirmed (an ACK is required from the other party) or unconfirmed (no-ACK required).
 
-
 Demo shows a working example of a common class A application. It spawns two tasks:
 
-**LoRaMAC task:** This is a higher priority background task which initializes LoRaMAC stack and waits for any events from Radio layer or MaC layer. All events generated from radio layer is through interrupts. Events are passed using FreeRTOS task notifications which unblocks the LoRaMAC task. Since the task serves interrupt events it runs at a higher priority than other task.
+### LoRaMAC task
+This is a higher priority background task which initializes LoRaMAC stack and waits for any events from Radio layer or MaC layer. All events generated from radio layer is through interrupts. Events are passed using FreeRTOS task notifications which unblocks the LoRaMAC task. Since the task serves interrupt events it runs at a higher priority than other task.
 
 **Note:** Since the radio interrupt handler uses FreeRTOS API for task notifications, the priority for radio interrupts should be set less than or equal to  `configMAX_SYSCALL_INTERRUPT_PRIORITY` as mentioned in FreeRTOS doc [here](https://www.freertos.org/a00110.html#kernel_priority). This means an interrupt can be delayed due to FreeRTOS kernel code execution.
 
-**LoRaWAN Class A task:** Task behaves like a common Class A application. It sends an uplink message periodically at an interval configured to follow the fair access policy defined for a LoRaWAN network and region. There are also other parameters like data rate, SF, bandwidth, payload length etc. which needs to be tuned based on how far is the device from gateway, how many devices are connecting to gateway, application requirements etc. If MAC layer indicates that an uplink needs to be send to flush out any pending responses to MAC commands from server, then it sends an empty uplink immediately. If a frame loss is detected by MAC layer, then it triggers a re-join procedure to reset the frame counters.
+## LoRaWAN Class A task
+Task behaves like a common Class A application. It sends an uplink message periodically at an interval configured to follow the fair access policy defined for a LoRaWAN network and region. There are also other parameters like data rate, SF, bandwidth, payload length etc. which needs to be tuned based on how far is the device from gateway, how many devices are connecting to gateway, application requirements etc. If MAC layer indicates that an uplink needs to be send to flush out any pending responses to MAC commands from server, then it sends an empty uplink immediately. If a frame loss is detected by MAC layer, then it triggers a re-join procedure to reset the frame counters.
 
 All events from MAC layer to application are sent using light weight task notifications. LoRaWAN allows multiple requests for the server to be piggy-backed to an uplink message. The responses to these requests are received by application in order using a queue. A downlink queue exists in case application wants to read multiple payloads received at once, before sending an uplink payload.
 
-**Low Power Mode:** An important feature of class A based communication is it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
+## Low Power Mode
+An important feature of class A based communication is it consumes less power which leads to prolonged batery life. Low power mode for the demo can be enabled using FreeRTOS tickless idle feature as describe [here](https://www.freertos.org/low-power-tickless-rtos.html). Tickless idle mode can be enabled by providing a board specific implementation for `portSUPPRESS_TICKS_AND_SLEEP()` macro and setting `configUSE_TICKLESS_IDLE` to the appropirate value in `FreeRTOSConfig.h`. Enabling tickless mode allows MCU to sleep when the tasks are idle, but be waken up by an interrupt from the radio. 
 
 ## Supported Platforms
 Vendor | MCU | LoRa Radios | IDE 
