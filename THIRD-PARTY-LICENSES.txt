@@ -1,5 +1,6 @@
 ** LoRaMac Node ; version 4.4.4 -- http://stackforce.github.io/LoRaMac-doc/
 Copyright Semtech Corporation 2013. All rights reserved.
+Stackforce embedded.connectivity.solutions
 
 Revised BSD License
 Copyright Semtech Corporation 2013. All rights reserved.
