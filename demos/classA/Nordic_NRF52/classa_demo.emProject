@@ -260,11 +260,14 @@
       <file file_name="config/FreeRTOSConfig.h" />
       <file file_name="config/iot_gpio_config.h" />
       <file file_name="config/sdk_config.h" />
+      <file file_name="config/LoRaWANConfig.h" />
     </folder>
     <file file_name="main.c" />
     <folder Name="logging">
       <file file_name="../../../freertos/libraries/c_sdk/standard/common/logging/iot_logging_task_dynamic_buffers.c" />
     </folder>
+    <file file_name="LoRaWAN.c" />
+    <file file_name="LoRaWAN.h" />
   </project>
   <configuration
     Name="Debug"
