@@ -28,16 +28,23 @@ Nordic | NRF52840-DK | sx1262mb2cas | Segger Embedded Studio (SES)
 
 ## Running the demo on Nordic NRf52840
 ### Download and View the Code
-The demo leverages open-source [FreeRTOS kernel and libraries](https://github.com/aws/amazon-freertos) and 
-a slightly altered fork of [LoraMac-node stack](https://github.com/dachalco/LoRaMac-node).
+The demo leverages open-source [FreeRTOS kernel and libraries](https://github.com/aws/amazon-freertos) and sligthly patched version of open source
+[LoRaMac-node v4.4.4](https://github.com/Lora-net/LoRaMac-node/tree/v4.4.4).
 
 1) Download the repository along with the dependent repositories:
 ```
-git clone --recurse-submodules git@github.com:ravibhagavandas/FreeRTOS-LoRaWAN.git
+git clone --recurse-submodules git@github.com:FreeRTOS/Lab-Project-FreeRTOS-LoRaWAN.git
 ```
-2) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
+2) Apply the patch on top of LoRaMac-node v4.4.4
 
-2) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click `Open`. 
+```
+cd Lab-Project-FreeRTOS-LoRaWAN
+git apply  FreeRTOS-LoRaMac-node-v4_4_4.patch
+```
+
+3) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
+
+4) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click `Open`. 
 
 ### Create a TTN account, TTN Appication, and Add Your Device
 1) Navigate to [TTN home page](https://www.thethingsnetwork.org/).

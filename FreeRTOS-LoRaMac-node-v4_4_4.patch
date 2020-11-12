@@ -1,0 +1,143 @@
+diff --git a/LoRaMac-node/src/mac/LoRaMac.h b/LoRaMac-node/src/mac/LoRaMac.h
+index d8b908dc..ab0347ba 100644
+--- a/LoRaMac-node/src/mac/LoRaMac.h
++++ b/LoRaMac-node/src/mac/LoRaMac.h
+@@ -458,7 +458,7 @@ typedef union uPingSlotInfo
+         /*!
+          * RFU
+          */
+-        uint8_t RFU             : 5;
++        uint8_t reserved             : 5;
+     }Fields;
+ }PingSlotInfo_t;
+ 
+diff --git a/LoRaMac-node/src/mac/LoRaMacHeaderTypes.h b/LoRaMac-node/src/mac/LoRaMacHeaderTypes.h
+index 6a865c03..57d9aac8 100644
+--- a/LoRaMac-node/src/mac/LoRaMacHeaderTypes.h
++++ b/LoRaMac-node/src/mac/LoRaMacHeaderTypes.h
+@@ -246,7 +246,7 @@ typedef union uLoRaMacHeader
+         /*!
+          * RFU
+          */
+-        uint8_t RFU             : 3;
++        uint8_t reserved             : 3;
+         /*!
+          * Message type
+          */
+diff --git a/LoRaMac-node/src/radio/radio.h b/LoRaMac-node/src/radio/radio.h
+index 6dd2a254..b1f0dce1 100644
+--- a/LoRaMac-node/src/radio/radio.h
++++ b/LoRaMac-node/src/radio/radio.h
+@@ -106,6 +106,12 @@ typedef struct
+      * \brief  Gnss Done Done callback prototype.
+     */
+     void    ( *WifiDone )( void );
++
++    /*!
++     * \brief Notify of a radio event from ISR.
++     */
++
++    void    ( *notify )( void );
+ }RadioEvents_t;
+ 
+ /*!
+@@ -377,6 +383,12 @@ struct Radio_s
+      * \brief Process radio irq
+      */
+     void ( *IrqProcess )( void );
++
++     /*!
++     * \brief Set radio notification.
++     */
++    void ( *SetEventNotify )( void ( * notify ) ( void ) );
++
+     /*
+      * The next functions are available only on SX126x radios.
+      */
+diff --git a/LoRaMac-node/src/radio/sx126x/radio.c b/LoRaMac-node/src/radio/sx126x/radio.c
+index 88b9714e..12b81a55 100644
+--- a/LoRaMac-node/src/radio/sx126x/radio.c
++++ b/LoRaMac-node/src/radio/sx126x/radio.c
+@@ -319,6 +319,8 @@ uint32_t RadioGetWakeupTime( void );
+  */
+ void RadioIrqProcess( void );
+ 
++void RadioSetEventNotify( void ( * notify ) ( void ) );
++
+ /*!
+  * \brief Sets the radio in reception mode with Max LNA gain for the given time
+  * \param [IN] timeout Reception timeout [ms]
+@@ -364,6 +366,7 @@ const struct Radio_s Radio =
+     RadioSetPublicNetwork,
+     RadioGetWakeupTime,
+     RadioIrqProcess,
++    RadioSetEventNotify,
+     // Available on SX126x only
+     RadioRxBoosted,
+     RadioSetRxDutyCycle
+@@ -1198,13 +1201,27 @@ void RadioOnRxTimeoutIrq( void* context )
+ {
+     if( ( RadioEvents != NULL ) && ( RadioEvents->RxTimeout != NULL ) )
+     {
+-        RadioEvents->RxTimeout( );
++        RadioEvents->RxTimeout();
++    }
++}
++
++void RadioSetEventNotify( void ( * notify ) ( void ) )
++{
++    if( RadioEvents != NULL )
++    {
++        RadioEvents->notify = notify;
+     }
++
+ }
+ 
+ void RadioOnDioIrq( void* context )
+ {
+     IrqFired = true;
++
++    if( ( RadioEvents != NULL ) && ( RadioEvents->notify != NULL ) )
++    {
++        RadioEvents->notify();
++    }
+ }
+ 
+ void RadioIrqProcess( void )
+diff --git a/LoRaMac-node/src/system/timer.h b/LoRaMac-node/src/system/timer.h
+index e18fc10f..a450cf4c 100644
+--- a/LoRaMac-node/src/system/timer.h
++++ b/LoRaMac-node/src/system/timer.h
+@@ -32,6 +32,12 @@ extern "C"
+ #include <stdbool.h>
+ #include <stdint.h>
+ 
++#ifdef LORAWAN_USE_EXTERNAL_TIMERS
++    /* Forward declaration of the Timer event structure. */
++    struct TimerEvent_s;
++    typedef struct TimerEvent_s * TimerEvent_t;
++#else
++
+ /*!
+  * \brief Timer object description
+  */
+@@ -44,7 +50,10 @@ typedef struct TimerEvent_s
+     void ( *Callback )( void* context ); //! Timer IRQ callback function
+     void *Context;                       //! User defined data object pointer to pass back
+     struct TimerEvent_s *Next;           //! Pointer to the next Timer object.
+-}TimerEvent_t;
++} TimerEvent_t;
++
++#endif
++
+ 
+ /*!
+  * \brief Timer time variable definition
+@@ -54,6 +63,7 @@ typedef uint32_t TimerTime_t;
+ #define TIMERTIME_T_MAX                             ( ( uint32_t )~0 )
+ #endif
+ 
++
+ /*!
+  * \brief Initializes the timer object
+  *
