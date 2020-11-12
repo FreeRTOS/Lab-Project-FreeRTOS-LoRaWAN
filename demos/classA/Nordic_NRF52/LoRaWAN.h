@@ -93,7 +93,7 @@ typedef struct LoRaWANEventInfo
 
 /**
  * @brief Initializes LoRaWAN stack for the specified region.
- * Configures and starts underlying LoRaMAC stack. Creates a task to process LoRaMAC packets.
+ * Configures and starts the underlying LoRaMAC stack. Creates a high priority task to process LoRaMAC events from Radio.
  *
  * @param[in] region The region for the LoRaWAN network.
  * @return LORAMAC_STATUS_OK if the initialization was successful. Appropirate error code otherwise.
@@ -102,8 +102,8 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region );
 
 /**
  * @brief Performs a join operation with the LoRa Network Server.
- * For OTAA, it performs a blocking call untill handshake is complete. It performs JOIN retries at
- * random intervals for a configured number of tries.
+ * For OTAA, API is blocking untill the handshake is complete. It performs JOIN retries at
+ * specified interval with a random jitter, for a configured number of tries.
  *
  * @param[in] joinType Type of JOIN operation, wether OTAA or ABP.
  * @param[in] dataRate Data rate used for the JOIN operation.
@@ -115,8 +115,8 @@ LoRaMacStatus_t LoRaWAN_Join( LoRaWANJoinType_t joinType,
 
 /**
  * @brief Enables or disables adaptive data rate.
- * Adaptive data rate mechanism is used by LoRa Network Server to find the right data rate by observing the
- * uplink traffic from end-device. Its useful and recommended to be turned on for fixed devices.
+ * Adaptive data rate mechanism is used by LoRa Network Server to find the right data rate for the device by observing the
+ * uplink traffic from end-device. Its recommended to be always turned on for devices with fixed location.
  *
  * @param[in] enable Enable or disable flag
  * @return LORAMAC_STATUS_OK if the operation was successful. Appropirate error code otherwise.
@@ -125,8 +125,8 @@ LoRaMacStatus_t LoRaWAN_SetAdaptiveDataRate( bool enable );
 
 /**
  * @brief Request for device time synchronization with LoRa Network Server.
- * Piggy backs a MAC command along with next payload to request for current time from LoRa network server. Uses the response from
- * LoRa network server to correct the clock drift for the device. Response will be send via an event.
+ * Piggy backs a MAC command along with the next uplink payload to request for time sync from LoRa network server. LoRaWAN stack gets the response from
+ * LoRa network server to correct the clock drift for the device. An event is generated for a successful device time update.
  *
  * @return LORAMAC_STATUS_OK if the request operation was successful. Appropirate error code otherwise.
  */
@@ -134,18 +134,18 @@ LoRaMacStatus_t LoRaWAN_RequestDeviceTimeSync( void );
 
 /**
  * @brief Request for link check with LoRa Network Server.
- * Piggy backs a MAC command along with next payload to do link check with LoRa network server. Gets back the response from LoRa Network
- * Server as an event.
+ * Piggy backs a MAC command along with next uplink  payload to perform link connectivity check with LoRa Network Server. Gets back the response from LoRa Network
+ * Server and sends an event witht the link check infromation to the user.
  *
  * @return LORAMAC_STATUS_OK if the request operation was successful. Appropirate error code otherwise.
  */
 LoRaMacStatus_t LoRaWAN_RequestLinkCheck( void );
 
 /**
- * @brief Sends payload to LoRa Network server.
- * This is a blocking call untill the payload is send out for an unconfirmed payload, or an acknoweledgement is received or retries
- * are exhausted for a confirmed payload. Number of retries for a confirmed payload is configurable. The retries tries different
- * frequencies so that can be received by gateway.
+ * @brief Sends a payload to LoRa Network server.
+ * This is blocking call untill the payload is send out of radio for an unconfirmed message, or an acknoweledgement is received or the retries
+ * are exhausted for a confirmed payload. Number of retries for a confirmed payload is configurable. The retries uses different
+ * frequencies uplink so as to find the right overlapping frequency with the gateway.
  *
  * @param[in] pMessage Pointer to the payload along with other information.
  * @param[in] confirmed Should send a confirmed payload or not.
@@ -167,7 +167,7 @@ BaseType_t LoRaWAN_Receive( LoRaWANEventInfo_t * pEventInfo,
 
 /**
  * @brief Cleans up LoRaWAN stack.
- * Stops and deinits the LoRaMAC stack. Deletes the LoRaMAC stack task.
+ * Stops and deinits the LoRaMAC stack. Deletes the LoRaMAC task and associated resources.
  */
 void LoRaWAN_Cleanup( void );
 
