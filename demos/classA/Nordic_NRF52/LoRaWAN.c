@@ -77,11 +77,6 @@ static LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
  */
 static LoRaMacCallback_t xLoRaMacCallbacks = { 0 };
 
-/**
- * @brief Region for LoRaWAN.
- */
-LoRaMacRegion_t lorawanRegion = LORAMAC_REGION_US915;
-
 
 /**
  * @brief Strings for denoting status responses from LoRaMAC layer.
@@ -603,23 +598,22 @@ LoRaMacStatus_t LoRaWAN_Join( void )
     uint32_t ulDutyCycleTimeMS = 0U;
     LoRaWANEventInfo_t event = { 0 };
     size_t xNumTries;
-    GetPhyParams_t getDefaulDR = { 0 };
-    PhyParam_t defaultDr = { 0 };
-
-    mlmeReq.Type = MLME_JOIN;
-
-
-    /* Set default data rate for join. */
-    getDefaulDR.Attribute = PHY_DEF_TX_DR;
-    defaultDr = RegionGetPhyParam( lorawanRegion, &getDefaulDR );
-    mlmeReq.Req.Join.Datarate = defaultDr.Value;
-
 
     /* Configure the credentials before each join operation. */
     status = prvSetOTAACredentials();
 
     if( status == LORAMAC_STATUS_OK )
     {
+        /* Query default data rate for join. */
+        mibReq.Type = MIB_CHANNELS_DEFAULT_DATARATE;
+        status = LoRaMacMibGetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mlmeReq.Type = MLME_JOIN;
+        mlmeReq.Req.Join.Datarate = mibReq.Param.ChannelsDefaultDatarate;
+
         for( xNumTries = 0; xNumTries < lorawanConfigMAX_JOIN_ATTEMPTS; xNumTries++ )
         {
             /**
