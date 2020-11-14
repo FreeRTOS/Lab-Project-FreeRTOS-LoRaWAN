@@ -61,10 +61,3 @@ void BoardCriticalSectionEnd( uint32_t *mask )
     (void)mask;
     taskEXIT_CRITICAL();
 }
-
-// Strictly for demo purposes, just hardcode some ID to make rest of the stack happy
-void BoardGetUniqueId( uint8_t *id )
-{
-    uint8_t eui[8] = DEV_EUI;
-    memcpy(id, eui, 8);
-}

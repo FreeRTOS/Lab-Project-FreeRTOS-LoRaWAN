@@ -268,6 +268,8 @@
     </folder>
     <file file_name="LoRaWAN.c" />
     <file file_name="LoRaWAN.h" />
+    <file file_name="classa_task.c" />
+    <file file_name="credentials.c" />
   </project>
   <configuration
     Name="Debug"

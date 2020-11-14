@@ -55,36 +55,26 @@
  * \author    Johannes Bruder ( STACKFORCE )
  */
 #ifndef __BOARD_CONFIG_H__
-#define __BOARD_CONFIG_H__
+    #define __BOARD_CONFIG_H__
 
-#include "nrf_gpio.h"
-#include "nrf_drv_spi.h"
+    #include "nrf_gpio.h"
+    #include "nrf_drv_spi.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+    #ifdef __cplusplus
+        extern "C"
+        {
+    #endif
 
-/**
- * @brief EUI and keys that needs to be provisioned for device identity and security.
- */
-#error "Please configure DEV EUI, Join EUI and App NWK key to run the demo"
-
-#define DEV_EUI       {};
-#define JOIN_EUI      {};
-#define APP_NWK_KEY   {};
+    #define BOARD_TCXO_WAKEUP_TIME        0
 
 
-#define BOARD_TCXO_WAKEUP_TIME                      0
+    #define LORA_MAC_SPI_FREQUENCY        NRF_DRV_SPI_FREQ_4M
+    #ifndef LORA_MAC_SPI_FREQUENCY
+        #define LORA_MAC_SPI_FREQUENCY    10000000
+    #endif
 
-
-#define LORA_MAC_SPI_FREQUENCY                     NRF_DRV_SPI_FREQ_4M
-#ifndef LORA_MAC_SPI_FREQUENCY
-    #define LORA_MAC_SPI_FREQUENCY                 10000000
-#endif
-
-#ifdef __cplusplus
+    #ifdef __cplusplus
 }
-#endif
+    #endif
 
 #endif // __BOARD_CONFIG_H__

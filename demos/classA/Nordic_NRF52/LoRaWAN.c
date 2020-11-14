@@ -42,6 +42,15 @@
  */
 #define ULONG_MAX                      ( 0xFFFFFFFFUL )
 
+/**
+ * @brief LoRaWAN EUIs which are 64 bits or 8 bytes in size.
+ */
+#define LORAWAN_EUI_SIZE               ( 8 )
+
+/**
+ * @brief LoRaWAN Keys which are 128 bits or 16 bytes in size.
+ */
+#define LORAWAN_KEY_SIZE               ( 16 )
 
 /**
  * @brief Handle for LoRaMAC task.
@@ -61,12 +70,17 @@ static QueueHandle_t xResponseQueue;
 /**
  * @brief  Static primitives registered with LoRaMAC stack.
  */
-LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
+static LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
 
 /**
  * @brief Static callbacks registered with LoRaMAC stack.
  */
-LoRaMacCallback_t xLoRaMacCallbacks = { 0 };
+static LoRaMacCallback_t xLoRaMacCallbacks = { 0 };
+
+/**
+ * @brief Region for LoRaWAN.
+ */
+LoRaMacRegion_t lorawanRegion = LORAMAC_REGION_US915;
 
 
 /**
@@ -281,35 +295,7 @@ static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 static LoRaMacStatus_t prvConfigure( void )
 {
     MibRequestConfirm_t mibReq;
-    LoRaMacStatus_t status;
-    uint8_t devEUI[] = DEV_EUI;
-    uint8_t joinEUI[] = JOIN_EUI;
-    uint8_t appKey[] = APP_NWK_KEY;
-
-    mibReq.Type = MIB_DEV_EUI;
-    mibReq.Param.DevEui = devEUI;
-    status = LoRaMacMibSetRequestConfirm( &mibReq );
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_JOIN_EUI;
-        mibReq.Param.JoinEui = joinEUI;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_APP_KEY;
-        mibReq.Param.AppKey = appKey;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
-
-    if( status == LORAMAC_STATUS_OK )
-    {
-        mibReq.Type = MIB_NWK_KEY;
-        mibReq.Param.AppKey = appKey;
-        status = LoRaMacMibSetRequestConfirm( &mibReq );
-    }
+    LoRaMacStatus_t status = LORAMAC_STATUS_OK;
 
     if( status == LORAMAC_STATUS_OK )
     {
@@ -343,6 +329,133 @@ static LoRaMacStatus_t prvConfigure( void )
 }
 
 
+static LoRaMacStatus_t prvSetOTAACredentials( void )
+{
+    MibRequestConfirm_t mibReq;
+    LoRaMacStatus_t status = LORAMAC_STATUS_OK;
+    uint8_t devEUI[ LORAWAN_EUI_SIZE ];
+    uint8_t joinEUI[ LORAWAN_EUI_SIZE ];
+    uint8_t appKey[ LORAWAN_KEY_SIZE ];
+
+
+    #ifdef lorawanConfigGET_DEV_EUI
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_DEV_EUI( devEUI );
+            mibReq.Type = MIB_DEV_EUI;
+            mibReq.Param.DevEui = devEUI;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    #ifdef lorawanConfigGET_JOIN_EUI
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_JOIN_EUI( joinEUI );
+            mibReq.Type = MIB_JOIN_EUI;
+            mibReq.Param.JoinEui = joinEUI;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+
+    #ifdef lorawanConfigGET_APP_KEY
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_APP_KEY( appKey );
+            mibReq.Type = MIB_APP_KEY;
+            mibReq.Param.AppKey = appKey;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+
+        if( status == LORAMAC_STATUS_OK )
+        {
+            mibReq.Type = MIB_NWK_KEY;
+            mibReq.Param.AppKey = appKey;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif /* ifdef lorawanConfigGET_APP_KEY */
+
+    return status;
+}
+
+static LoRaMacStatus_t prvSetABPCredentials( void )
+{
+    MibRequestConfirm_t mibReq;
+    LoRaMacStatus_t status = LORAMAC_STATUS_OK;
+    uint8_t devEUI[ LORAWAN_EUI_SIZE ];
+    uint8_t joinEUI[ LORAWAN_EUI_SIZE ];
+    uint8_t appsKey[ LORAWAN_KEY_SIZE ];
+    uint8_t nwsKey[ LORAWAN_KEY_SIZE ];
+
+    #ifdef lorawanConfigGET_DEV_EUI
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_DEV_EUI( devEUI );
+            mibReq.Type = MIB_DEV_EUI;
+            mibReq.Param.DevEui = devEUI;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    #ifdef lorawanConfigGET_JOIN_EUI
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_JOIN_EUI( joinEUI );
+            mibReq.Type = MIB_JOIN_EUI;
+            mibReq.Param.JoinEui = joinEUI;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    /* Tell the MAC layer which network server version are we connecting too. */
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_ABP_LORAWAN_VERSION;
+        mibReq.Param.AbpLrWanVersion.Value = lorawanConfigABP_LORAWAN_VERSION;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_NET_ID;
+        mibReq.Param.NetID = lorawanConfigNETWORK_ID;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    #ifdef lorawanConfigGET_DEV_ADDR
+        if( status == LORAMAC_STATUS_OK )
+        {
+            mibReq.Type = MIB_DEV_ADDR;
+            mibReq.Param.DevAddr = lorawanConfigGET_DEV_ADDR();
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    #ifdef lorawanConfigGET_APP_SESSION_KEY
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_APP_SESSION_KEY( appsKey );
+            mibReq.Type = MIB_APP_S_KEY;
+            mibReq.Param.AppSKey = appsKey;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    #ifdef lorawanConfigGET_NETWORK_SESSION_KEY
+        if( status == LORAMAC_STATUS_OK )
+        {
+            lorawanConfigGET_NETWORK_SESSION_KEY( nwsKey );
+            mibReq.Type = MIB_NWK_S_ENC_KEY;
+            mibReq.Param.NwkSEncKey = nwsKey;
+            status = LoRaMacMibSetRequestConfirm( &mibReq );
+        }
+    #endif
+
+    return status;
+}
+
+
 static uint8_t prvGetBatteryLevel( void )
 {
     return 0;
@@ -362,7 +475,7 @@ static void prvOnRadioNotify()
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
-static void prvLoRaMACLoopTask( void * pvParameters )
+static void prvLoRaMACTask( void * pvParameters )
 {
     uint32_t ulNotifiedValue;
 
@@ -435,7 +548,7 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
 
     if( status == LORAMAC_STATUS_OK )
     {
-        if( xTaskCreate( prvLoRaMACLoopTask, "LoRaMac", 2048, NULL, configMAX_PRIORITIES - 1, &xLoRaMacTask ) == pdTRUE )
+        if( xTaskCreate( prvLoRaMACTask, "LoRaMac", lorawanConfigLORAMAC_TASK_STACK_SIZE, NULL, lorawanConfigLORAMAC_TASK_PRIORITY, &xLoRaMacTask ) == pdTRUE )
         {
             Radio.SetEventNotify( &prvOnRadioNotify );
         }
@@ -459,13 +572,30 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
     return status;
 }
 
+
+LoRaMacStatus_t LoRaWAN_ActivateByPersonalization( void )
+{
+    MibRequestConfirm_t mibReq;
+    LoRaMacStatus_t status = LORAMAC_STATUS_OK;
+
+    status = prvSetABPCredentials();
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        mibReq.Type = MIB_NETWORK_ACTIVATION;
+        mibReq.Param.NetworkActivation = ACTIVATION_TYPE_ABP;
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+    }
+
+    return status;
+}
+
 /**
  * @brief Join to a LORAWAN network using OTAA join mechanism..
  * Blocks until the configured number of tries are reached or join is successful.
  */
 
-LoRaMacStatus_t LoRaWAN_Join( LoRaWANJoinType_t jointype,
-                              int8_t dataRate )
+LoRaMacStatus_t LoRaWAN_Join( void )
 {
     LoRaMacStatus_t status;
     MlmeReq_t mlmeReq = { 0 };
@@ -473,65 +603,79 @@ LoRaMacStatus_t LoRaWAN_Join( LoRaWANJoinType_t jointype,
     uint32_t ulDutyCycleTimeMS = 0U;
     LoRaWANEventInfo_t event = { 0 };
     size_t xNumTries;
+    GetPhyParams_t getDefaulDR = { 0 };
+    PhyParam_t defaultDr = { 0 };
 
     mlmeReq.Type = MLME_JOIN;
-    mlmeReq.Req.Join.Datarate = dataRate;
 
-    for( xNumTries = 0; xNumTries < lorawanConfigMAX_JOIN_ATTEMPTS; xNumTries++ )
+
+    /* Set default data rate for join. */
+    getDefaulDR.Attribute = PHY_DEF_TX_DR;
+    defaultDr = RegionGetPhyParam( lorawanRegion, &getDefaulDR );
+    mlmeReq.Req.Join.Datarate = defaultDr.Value;
+
+
+    /* Configure the credentials before each join operation. */
+    status = prvSetOTAACredentials();
+
+    if( status == LORAMAC_STATUS_OK )
     {
-        /**
-         * Initiates the join procedure. If the stack returns a duty cycle restricted error,
-         * then retry after the duty cycle period. Duty cycle errors are not counted
-         * as a failed try.
-         */
-        do
+        for( xNumTries = 0; xNumTries < lorawanConfigMAX_JOIN_ATTEMPTS; xNumTries++ )
         {
-            status = LoRaMacMlmeRequest( &mlmeReq );
-
-            if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+            /**
+             * Initiates the join procedure. If the stack returns a duty cycle restricted error,
+             * then retry after the duty cycle period. Duty cycle errors are not counted
+             * as a failed try.
+             */
+            do
             {
-                ulDutyCycleTimeMS = mlmeReq.ReqReturn.DutyCycleWaitTime;
-                configPRINTF( ( "Duty cycle restriction. Next Join in : ~%lu second(s)\n", ( ulDutyCycleTimeMS / 1000 ) ) );
-                vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
-            }
-        } while( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED );
+                status = LoRaMacMlmeRequest( &mlmeReq );
 
-        if( status == LORAMAC_STATUS_OK )
-        {
-            xQueueReceive( xResponseQueue, &event, portMAX_DELAY );
+                if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+                {
+                    ulDutyCycleTimeMS = mlmeReq.ReqReturn.DutyCycleWaitTime;
+                    configPRINTF( ( "Duty cycle restriction. Next Join in : ~%lu second(s)\n", ( ulDutyCycleTimeMS / 1000 ) ) );
+                    vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
+                }
+            } while( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED );
 
-            if( ( event.type == LORAWAN_EVENT_JOIN_RESPONSE ) && ( event.status == LORAMAC_EVENT_INFO_STATUS_OK ) )
+            if( status == LORAMAC_STATUS_OK )
             {
-                configPRINTF( ( "Successfully joined a LoRaWAN network.\n" ) );
+                xQueueReceive( xResponseQueue, &event, portMAX_DELAY );
 
-                mibReq.Type = MIB_DEV_ADDR;
-                LoRaMacMibGetRequestConfirm( &mibReq );
-                configPRINTF( ( "Device address : %08lX\n", mibReq.Param.DevAddr ) );
+                if( ( event.type == LORAWAN_EVENT_JOIN_RESPONSE ) && ( event.status == LORAMAC_EVENT_INFO_STATUS_OK ) )
+                {
+                    configPRINTF( ( "Successfully joined a LoRaWAN network.\n" ) );
 
-                mibReq.Type = MIB_CHANNELS_DATARATE;
-                LoRaMacMibGetRequestConfirm( &mibReq );
-                configPRINTF( ( "Data rate : DR_%d\n", mibReq.Param.ChannelsDatarate ) );
+                    mibReq.Type = MIB_DEV_ADDR;
+                    LoRaMacMibGetRequestConfirm( &mibReq );
+                    configPRINTF( ( "Device address : %08lX\n", mibReq.Param.DevAddr ) );
 
-                break;
+                    mibReq.Type = MIB_CHANNELS_DATARATE;
+                    LoRaMacMibGetRequestConfirm( &mibReq );
+                    configPRINTF( ( "Data rate : DR_%d\n", mibReq.Param.ChannelsDatarate ) );
+
+                    break;
+                }
+                else
+                {
+                    configPRINTF( ( "Failed to join loRaWAN network with status %d.\n", event.status ) );
+                    status = LORAMAC_STATUS_ERROR;
+                }
             }
             else
             {
-                configPRINTF( ( "Failed to join loRaWAN network with status %d.\n", event.status ) );
-                status = LORAMAC_STATUS_ERROR;
+                configPRINTF( ( "Failed to initiate a LoRaWAN JOIN request with status %d.\n", status ) );
+                break;
             }
-        }
-        else
-        {
-            configPRINTF( ( "Failed to initiate a LoRaWAN JOIN request with status %d.\n", status ) );
-            break;
-        }
 
-        if( xNumTries < ( lorawanConfigMAX_JOIN_ATTEMPTS - 1 ) )
-        {
-            ulDutyCycleTimeMS = ( lorawanConfigJOIN_RETRY_INTERVAL_MS ) +
-                                randr( -lorawanConfigMAX_JITTER_MS, lorawanConfigMAX_JITTER_MS );
-            configPRINTF( ( "Retrying join attempt after %lu seconds.\n", ( ulDutyCycleTimeMS / 1000 ) ) );
-            vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
+            if( xNumTries < ( lorawanConfigMAX_JOIN_ATTEMPTS - 1 ) )
+            {
+                ulDutyCycleTimeMS = ( lorawanConfigJOIN_RETRY_INTERVAL_MS ) +
+                                    randr( -lorawanConfigMAX_JITTER_MS, lorawanConfigMAX_JITTER_MS );
+                configPRINTF( ( "Retrying join attempt after %lu seconds.\n", ( ulDutyCycleTimeMS / 1000 ) ) );
+                vTaskDelay( pdMS_TO_TICKS( ulDutyCycleTimeMS ) );
+            }
         }
     }
 
@@ -644,8 +788,17 @@ BaseType_t LoRaWAN_Receive( LoRaWANEventInfo_t * pEventInfo,
 
 void LoRaWAN_Cleanup( void )
 {
+    LoRaMacStop();
     ( void ) LoRaMacDeInitialization();
     vTaskDelete( xLoRaMacTask );
     vQueueDelete( xEventQueue );
     vQueueDelete( xResponseQueue );
 }
+
+/* Unique ID for the board used by LoRaMAC APIs. */
+#ifdef lorawanConfigGET_DEV_EUI
+    void BoardGetUniqueId( uint8_t * id )
+    {
+        lorawanConfigGET_DEV_EUI( id );
+    }
+#endif

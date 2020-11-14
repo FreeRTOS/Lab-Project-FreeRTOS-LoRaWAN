@@ -30,15 +30,6 @@
 #include "LoRaMac.h"
 
 /**
- * @brief Values indicating different join types.
- */
-typedef enum LoRaWANJoinType
-{
-    LORAWAN_JOIN_TYPE_OTAA = 0, /**< @brief Over The Air Activation join type. */
-    LORAWAN_JOIN_TYPE_ABP       /**< @brief Activation by personalization join type. */
-} LoRaWANJoinType_t;
-
-/**
  * @brief Structure which holds the LoRaWAN payload information.
  * The same structure is used for both payload send and received.
  */
@@ -53,11 +44,11 @@ typedef struct LoRaWANMessage
 /**
  * @brief Information sent as part of link check reply event.
  */
-typedef struct LinkCheckInfo
+typedef struct LoraWANLinkCheckInfo
 {
     uint8_t DemodMargin; /**< @brief Demodulation margin. Contains the link margin [dB] of the last successfully received LinkCheckReq. */
     uint8_t NbGateways;  /**< @brief Number of gateways which received the last LinkCheckReq. */
-} LinkCheckInfo_t;
+} LoraWANLinkCheckInfo_t;
 
 /**
  * @brief Event types received from LoRaWAN network.
@@ -85,9 +76,9 @@ typedef struct LoRaWANEventInfo
 
     union
     {
-        LinkCheckInfo_t linkCheck;     /**< @brief Link check information associated with LORAWAN_EVENT_LINK_CHECK_REPLY. */
-        bool ackReceived;              /**< @brief Acknoweldgement flag for a confirmed uplink. */
-        LoRaWANMessage_t downlinkData; /**< @brief Downlink data associated with event LORAWAN_EVENT_DOWNLINK_DATA. */
+        LoraWANLinkCheckInfo_t linkCheck; /**< @brief Link check information associated with LORAWAN_EVENT_LINK_CHECK_REPLY. */
+        bool ackReceived;                 /**< @brief Acknoweldgement flag for a confirmed uplink. */
+        LoRaWANMessage_t downlinkData;    /**< @brief Downlink data associated with event LORAWAN_EVENT_DOWNLINK_DATA. */
     } info;
 } LoRaWANEventInfo_t;
 
@@ -101,16 +92,21 @@ typedef struct LoRaWANEventInfo
 LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region );
 
 /**
- * @brief Performs a join operation with the LoRa Network Server.
- * For OTAA, API is blocking untill the handshake is complete. It performs JOIN retries at
+ * @brief Performs a join operation using OTAA handshake with the LoRa Network Server.
+ * API is blocking untill the handshake is complete. It performs JOIN retries at
  * specified interval with a random jitter, for a configured number of tries.
  *
- * @param[in] joinType Type of JOIN operation, wether OTAA or ABP.
- * @param[in] dataRate Data rate used for the JOIN operation.
  * @return LORAMAC_STATUS_OK if the join was successful. Appropirate error code otherwise.
  */
-LoRaMacStatus_t LoRaWAN_Join( LoRaWANJoinType_t joinType,
-                              int8_t dataRate );
+LoRaMacStatus_t LoRaWAN_Join( void );
+
+/**
+ * @brief Activates the device by personalization without doing a JOIN handshake.
+ * For ABP join, end-device does not exchange any message with LoRa Network Server.
+ *
+ * @return LORAMAC_STATUS_OK if the join was successful. Appropirate error code otherwise.
+ */
+LoRaMacStatus_t LoRaWAN_ActivateByPersonalization( void );
 
 
 /**
