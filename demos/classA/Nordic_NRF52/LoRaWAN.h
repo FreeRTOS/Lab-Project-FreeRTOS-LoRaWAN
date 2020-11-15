@@ -167,4 +167,4 @@ BaseType_t LoRaWAN_Receive( LoRaWANEventInfo_t * pEventInfo,
  */
 void LoRaWAN_Cleanup( void );
 
-#endif LORAWAN_H /* LORAWAN_H */
+#endif /* LORAWAN_H */

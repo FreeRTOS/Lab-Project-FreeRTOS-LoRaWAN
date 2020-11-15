@@ -2,6 +2,6 @@
 [submodule "LoRaMac-node"]
 	path = LoRaMac-node
 	url = https://github.com/Lora-net/LoRaMac-node.git
-[submodule "freertos"]
-	path = freertos
-	url = https://github.com/aws/amazon-freertos.git
+[submodule "FreeRTOS-Kernel"]
+	path = FreeRTOS-Kernel
+	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git

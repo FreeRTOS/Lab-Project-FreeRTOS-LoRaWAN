@@ -28,8 +28,9 @@
  * the LoRaMAC secure element interface and remove these functions from LoRaWANConfig.h
  */
 #include <stdint.h>
+#include <string.h>
 
-/*#error "Please configure DEV EUI, Join EUI and App key to run the demo using OTAA" */
+#error "Please configure DEV EUI, Join EUI and App key to run the demo using OTAA"
 
 /**
  * @brief Device EUI needed for both OTAA and ABP activation.
