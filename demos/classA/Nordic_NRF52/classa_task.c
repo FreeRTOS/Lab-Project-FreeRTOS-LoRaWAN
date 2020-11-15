@@ -37,16 +37,6 @@
  */
 #define LORAWAN_REGION                         LORAMAC_REGION_US915
 
-/*
- * @brief Default data rate used for uplink messages.
- *
- * Data rate for LoRAWAN depends on two factors: spreading factor and bandwidth. Default value is set to DR_0 which is
- * the highest spreading factor and lowest bandwidth for a region. Higher spreading factor lead to better reception
- * and longer range from the gateway. However this also leads to longest air time for radio and lowest data rate
- * for transmission.
- *
- */
-#define LORAWAN_DEFAULT_DATARATE               ( DR_0 )
 
 /**
  * @brief LoRa MAC layer port used by the application.
