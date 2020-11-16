@@ -169,16 +169,23 @@ extern void getGetNwkSessionKey( uint8_t * nwkSessionKey );
  */
 #define lorawanConfigRESPONSE_QUEUE_SIZE    ( 1 )
 
+/**
+ * @breif Queue size for downlink data.
+ *
+ * Class A application sends an uplink and then polls for downlink messages, the next two receive windows. Only one message is sent
+ * by downlink server for each uplink. Hence setting the queue size to 1.
+ */
+#define lorawanConfigDOWNLINK_QUEUE_SIZE    ( 1 )
 
 /**
  * @breif Queue size for downlink events.
  *
- * Class A application sends an uplink and then uses two receive slots for any downlink messages from the server. It does not receive
- * messages from server any other time.
  * For class A application at most 4 events can be received downlink per uplink at any time (SRV_MAC_LINK_CHECK_ANS, SRV_MAC_DEVICE_TIME_ANS, FRAME LOSS, DOWNLINK DATA)
  * Queue size can be adjusted based on application needs.
  */
-#define lorawanConfigEVENT_QUEUE_SIZE           ( 4 )
+#define lorawanConfigEVENT_QUEUE_SIZE       ( 4 )
+
+
 
 /**
  * @brief Stack size for LoRaMAC task.

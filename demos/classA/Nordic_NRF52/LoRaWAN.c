@@ -68,6 +68,11 @@ static QueueHandle_t xEventQueue;
 static QueueHandle_t xResponseQueue;
 
 /**
+ * @brief Queue to receive downlink Data LoRa Network Server.
+ */
+static QueueHandle_t xDownlinkQueue;
+
+/**
  * @brief  Static primitives registered with LoRaMAC stack.
  */
 static LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
@@ -168,21 +173,20 @@ static void prvMcpsConfirm( McpsConfirm_t * mcpsConfirm )
 static void prvMcpsIndication( McpsIndication_t * mcpsIndication )
 {
     LoRaWANEventInfo_t event = { 0 };
+    LoRaWANMessage_t downlink = { 0 };
 
     configPRINTF( ( "MCPS INDICATION status: %s\n", EventInfoStatusStrings[ mcpsIndication->Status ] ) );
 
     if( ( mcpsIndication->Status == LORAMAC_EVENT_INFO_STATUS_OK ) &&
         ( mcpsIndication->RxData == true ) )
     {
-        event.type = LORAWAN_EVENT_DOWNLINK_DATA;
-        event.status = LORAMAC_EVENT_INFO_STATUS_OK;
         configASSERT( mcpsIndication->BufferSize <= lorawanConfigMAX_MESSAGE_SIZE );
-        event.info.downlinkData.port = mcpsIndication->Port;
-        event.info.downlinkData.length = mcpsIndication->BufferSize;
-        event.info.downlinkData.dataRate = mcpsIndication->RxDatarate;
-        memcpy( event.info.downlinkData.data, mcpsIndication->Buffer, mcpsIndication->BufferSize );
+        downlink.port = mcpsIndication->Port;
+        downlink.length = mcpsIndication->BufferSize;
+        downlink.dataRate = mcpsIndication->RxDatarate;
+        memcpy( downlink.data, mcpsIndication->Buffer, mcpsIndication->BufferSize );
 
-        if( xQueueSend( xEventQueue, &event, 1 ) != pdTRUE )
+        if( xQueueSend( xDownlinkQueue, &downlink, 1 ) != pdTRUE )
         {
             configPRINTF( ( "Failed to send downlink data event to the queue.\r\n" ) );
         }
@@ -534,8 +538,9 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
     {
         xEventQueue = xQueueCreate( lorawanConfigEVENT_QUEUE_SIZE, sizeof( LoRaWANEventInfo_t ) );
         xResponseQueue = xQueueCreate( lorawanConfigRESPONSE_QUEUE_SIZE, sizeof( LoRaWANEventInfo_t ) );
+        xDownlinkQueue = xQueueCreate( lorawanConfigDOWNLINK_QUEUE_SIZE, sizeof( LoRaWANMessage_t ) );
 
-        if( ( xEventQueue == NULL ) || ( xResponseQueue == NULL ) )
+        if( ( xEventQueue == NULL ) || ( xResponseQueue == NULL ) || ( xDownlinkQueue == NULL ) )
         {
             status = LORAMAC_STATUS_ERROR;
         }
@@ -774,10 +779,38 @@ LoRaMacStatus_t LoRaWAN_Send( LoRaWANMessage_t * pMessage,
     return status;
 }
 
-BaseType_t LoRaWAN_Receive( LoRaWANEventInfo_t * pEventInfo,
+BaseType_t LoRaWAN_Receive( LoRaWANMessage_t * pMessage,
                             uint32_t timeoutMS )
 {
-    return xQueueReceive( xEventQueue, pEventInfo, pdMS_TO_TICKS( timeoutMS ) );
+    TickType_t ticksToWait;
+
+    if( timeoutMS > 0 )
+    {
+        ticksToWait = pdMS_TO_TICKS( timeoutMS );
+    }
+    else
+    {
+        ticksToWait = 1;
+    }
+
+    return xQueueReceive( xDownlinkQueue, pMessage, ticksToWait );
+}
+
+BaseType_t LoRaWAN_PollEvent( LoRaWANEventInfo_t * pEventInfo,
+                              uint32_t timeoutMS )
+{
+    TickType_t ticksToWait;
+
+    if( timeoutMS > 0 )
+    {
+        ticksToWait = pdMS_TO_TICKS( timeoutMS );
+    }
+    else
+    {
+        ticksToWait = 1;
+    }
+
+    return xQueueReceive( xEventQueue, pEventInfo, ticksToWait );
 }
 
 void LoRaWAN_Cleanup( void )

@@ -35,7 +35,7 @@
  * by setting the appropirate compiler flag for the region and setting this config to the corresponding
  * region.
  */
-#define LORAWAN_REGION                         LORAMAC_REGION_US915
+#define LORAWAN_REGION    LORAMAC_REGION_US915
 
 
 /**
@@ -77,7 +77,7 @@
  * As per LoRaWAN spec, class A end device uses two receive windows slots after sending an uplink packet. For US915the max window duration is
  * 3000 ms and the second RX window max delay is 2 seconds. So setting the receive timeout to higher than the receive window slots.
  */
-#define LORAWAN_RECEIVE_TIMEOUT_MS    ( 6000 )
+#define CLASSA_RECEIVE_WINDOW_DURATION_MS    ( 6000 )
 
 
 /*!
@@ -110,6 +110,32 @@ static void prvPrintHexBuffer( uint8_t * buffer,
     configPRINTF( ( "\n" ) );
 }
 
+static LoRaMacStatus_t prvFetchDownlinkPacket( void )
+{
+    LoRaMacStatus_t status;
+    LoRaWANMessage_t uplink = { 0 };
+    LoRaWANMessage_t downlink = { 0 };
+
+    /* Send an empty uplink message in confirmed mode. */
+    uplink.length = 0;
+    uplink.port = LORAWAN_APP_PORT;
+
+    status = LoRaWAN_Send( &uplink, true );
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        configPRINTF( ( "Successfully sent an uplink packet, confirmed = true.\r\n" ) );
+
+        if( LoRaWAN_Receive( &downlink, CLASSA_RECEIVE_WINDOW_DURATION_MS ) == pdTRUE )
+        {
+            configPRINTF( ( "Received downlink data on port %d:\r\n", downlink.port ) );
+            prvPrintHexBuffer( downlink.data, downlink.length );
+        }
+    }
+
+    return status;
+}
+
 
 void vLorawanClassATask( void * params )
 {
@@ -117,7 +143,7 @@ void vLorawanClassATask( void * params )
     uint32_t ulDutyCycleWaitTimeMs;
     uint32_t ulTxIntervalMs;
     LoRaWANMessage_t uplink;
-    BaseType_t eventStatus;
+    LoRaWANMessage_t downlink;
     LoRaWANEventInfo_t event;
 
 
@@ -174,33 +200,35 @@ void vLorawanClassATask( void * params )
                 configPRINTF( ( "Successfully sent an uplink packet, confirmed = %d \r\n", LORAWAN_CONFIRMED_SEND ) );
 
 
-                configPRINTF( ( "Receiving  downlink events.\r\n" ) );
+                configPRINTF( ( "Waiting for downlink data.\r\n" ) );
+
+                if( LoRaWAN_Receive( &downlink, CLASSA_RECEIVE_WINDOW_DURATION_MS ) == pdTRUE )
+                {
+                    configPRINTF( ( "Received downlink data on port %d:\r\n", downlink.port ) );
+                    prvPrintHexBuffer( downlink.data, downlink.length );
+                }
+                else
+                {
+                    configPRINTF( ( "No downlink data.\r\n" ) );
+                }
 
                 /**
                  * Poll for events from LoRa network server.
                  */
                 for( ; ; )
                 {
-                    eventStatus = LoRaWAN_Receive( &event, LORAWAN_RECEIVE_TIMEOUT_MS );
-
-                    if( eventStatus == pdTRUE )
+                    if( LoRaWAN_PollEvent( &event, 0 ) == pdTRUE )
                     {
                         switch( event.type )
                         {
-                            case LORAWAN_EVENT_DOWNLINK_DATA:
-                                configPRINTF( ( "Received downlink data on port %d:\r\n", event.info.downlinkData.port ) );
-                                prvPrintHexBuffer( event.info.downlinkData.data, event.info.downlinkData.length );
-                                break;
-
                             case LORAWAN_EVENT_DOWNLINK_PENDING:
 
                                 /**
                                  * MAC layer indicated there are pending acknowledgments to be sent
                                  * uplink as soon as possible. Wait for duty cycle time and send an uplink.
                                  */
-                                configPRINTF( ( "Received a downlink pending event. Sending an empty uplink event to receive downlink.\r\n" ) );
-                                uplink.length = 0;
-                                LoRaWAN_Send( &uplink, LORAWAN_CONFIRMED_SEND );
+                                configPRINTF( ( "Received a downlink pending event. Send an empty uplink to fetch downlink packets.\r\n" ) );
+                                status = prvFetchDownlinkPacket();
                                 break;
 
                             case LORAWAN_EVENT_TOO_MANY_FRAME_LOSS:
@@ -243,9 +271,6 @@ void vLorawanClassATask( void * params )
                      * Frame was sent successfully. Wait for next TX schedule to send uplink thereby obeying fair
                      * access policy.
                      */
-
-                    uplink.length = 1;
-                    uplink.data[ 0 ] = 0xFF;
 
                     ulTxIntervalMs = ( LORAWAN_APPLICATION_TX_INTERVAL_SEC * 1000 ) + randr( -LORAWAN_APPLICATION_JITTER_MS, LORAWAN_APPLICATION_JITTER_MS );
 

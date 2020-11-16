@@ -59,7 +59,6 @@ typedef enum LoRaWANEventType
     LORAWAN_EVENT_JOIN_RESPONSE,            /**< @brief Successful or failed join response. */
     LORAWAN_EVENT_UNCONFIRMED_MESSAGE_SENT, /**< @brief Indicates an unconfirmed  payload is sent out of radio. */
     LORAWAN_EVENT_CONFIRMED_MESSAGE_ACK,    /**< @brief Indicates an acknowledgment for an confirmed uplink payload. */
-    LORAWAN_EVENT_DOWNLINK_DATA,            /**< @brief Indicates a downlink payload from network server. */
     LORAWAN_EVENT_DOWNLINK_PENDING,         /**< @brief Indicates that server has to send more downlink data or waiting for a mac command uplink. */
     LORAWAN_EVENT_TOO_MANY_FRAME_LOSS,      /**< @brief Indicates too many frames are missed between end device and LoRa network server. */
     LORAWAN_EVENT_DEVICE_TIME_UPDATED,      /**< @brief Indicates the device time has been synchronized with LoRa network server. */
@@ -78,7 +77,6 @@ typedef struct LoRaWANEventInfo
     {
         LoraWANLinkCheckInfo_t linkCheck; /**< @brief Link check information associated with LORAWAN_EVENT_LINK_CHECK_REPLY. */
         bool ackReceived;                 /**< @brief Acknoweldgement flag for a confirmed uplink. */
-        LoRaWANMessage_t downlinkData;    /**< @brief Downlink data associated with event LORAWAN_EVENT_DOWNLINK_DATA. */
     } info;
 } LoRaWANEventInfo_t;
 
@@ -151,15 +149,27 @@ LoRaMacStatus_t LoRaWAN_Send( LoRaWANMessage_t * pMessage,
                               bool confirmed );
 
 /**
- * @brief Receives a downlink event from LoRa Network server.
- * Blocks for the specified timeout provided. Downlink events can be a payload or other control events.
+ * @brief Receives a downlink message from LoRa Network server.
+ * Blocks for the specified timeout provided.
  *
  * @param[out] pEventInfo Pointer to structure containing event type and other information.
- * @param[in] timeoutMS Timeout in milliseconds to block for an event.
+ * @param[in] timeoutMS Timeout in milliseconds to block for an event.  Set to 0 to not block for an event.
  * @return pdFALSE if there are no more events. pdTRUE if there are more events to be processed.
  */
-BaseType_t LoRaWAN_Receive( LoRaWANEventInfo_t * pEventInfo,
+BaseType_t LoRaWAN_Receive( LoRaWANMessage_t * pMessage,
                             uint32_t timeoutMS );
+
+
+/**
+ * @brief Poll for a downlink event from LoRa Network server.
+ * Blocks for the specified timeout provided.
+ *
+ * @param[out] pEventInfo Pointer to structure containing event type and other information.
+ * @param[in] timeoutMS Timeout in milliseconds to block for an event. Set to 0 to not block for an event.
+ * @return pdFALSE if there are no more events. pdTRUE if there are more events to be processed.
+ */
+BaseType_t LoRaWAN_PollEvent( LoRaWANEventInfo_t * pEventInfo,
+                              uint32_t timeoutMS );
 
 /**
  * @brief Cleans up LoRaWAN stack.
