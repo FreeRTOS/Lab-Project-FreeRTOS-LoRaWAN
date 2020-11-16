@@ -142,31 +142,18 @@ static const char * EventInfoStatusStrings[] =
 
 static void prvMcpsConfirm( McpsConfirm_t * mcpsConfirm )
 {
-    LoRaWANEventInfo_t event;
+    LoRaMacEventInfoStatus_t status = mcpsConfirm->Status;
 
-    configPRINTF( ( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[ mcpsConfirm->Status ] ) );
+    configPRINTF( ( "MCPS CONFIRM status: %s\n", EventInfoStatusStrings[ status ] ) );
 
-    event.status = mcpsConfirm->Status;
-
-    switch( mcpsConfirm->McpsRequest )
+    if( ( mcpsConfirm->McpsRequest == MCPS_CONFIRMED ) && ( mcpsConfirm->AckReceived == false ) )
     {
-        case MCPS_CONFIRMED:
-            event.type = LORAWAN_EVENT_CONFIRMED_MESSAGE_ACK;
-            event.info.ackReceived = mcpsConfirm->AckReceived;
-            break;
-
-        case MCPS_UNCONFIRMED:
-            event.type = LORAWAN_EVENT_UNCONFIRMED_MESSAGE_SENT;
-            break;
-
-        default:
-            event.type = LORAWAN_EVENT_UNKOWN;
-            break;
+        status = LORAMAC_EVENT_INFO_STATUS_ERROR;
     }
 
-    if( xQueueSend( xResponseQueue, &event, portMAX_DELAY ) != pdTRUE )
+    if( xQueueSend( xResponseQueue, &status, 1 ) != pdTRUE )
     {
-        configPRINTF( ( "Failed to send mcps response to the queue.\r\n" ) );
+        configPRINTF( ( "Failed to send MCPS response to the queue.\r\n" ) );
     }
 }
 
@@ -250,14 +237,11 @@ static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 
     configPRINTF( ( "MLME CONFIRM  status: %s\n", EventInfoStatusStrings[ mlmeConfirm->Status ] ) );
 
-    event.status = mlmeConfirm->Status;
-
     switch( mlmeConfirm->MlmeRequest )
     {
         case MLME_JOIN:
-            event.type = LORAWAN_EVENT_JOIN_RESPONSE;
 
-            if( xQueueSend( xResponseQueue, &event, 1 ) != pdTRUE )
+            if( xQueueSend( xResponseQueue, &mlmeConfirm->Status, 1 ) != pdTRUE )
             {
                 configPRINTF( ( "Failed to send JOIN response to the queue.\r\n" ) );
             }
@@ -266,6 +250,7 @@ static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 
         case MLME_DEVICE_TIME:
             event.type = LORAWAN_EVENT_DEVICE_TIME_UPDATED;
+            event.status = mlmeConfirm->Status;
 
             if( xQueueSend( xEventQueue, &event, 1 ) != pdTRUE )
             {
@@ -276,6 +261,7 @@ static void prvMlmeConfirm( MlmeConfirm_t * mlmeConfirm )
 
         case MLME_LINK_CHECK:
             event.type = LORAWAN_EVENT_LINK_CHECK_REPLY;
+            event.status = mlmeConfirm->Status;
             event.info.linkCheck.DemodMargin = mlmeConfirm->DemodMargin;
             event.info.linkCheck.NbGateways = mlmeConfirm->NbGateways;
 
@@ -537,7 +523,7 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
     if( status == LORAMAC_STATUS_OK )
     {
         xEventQueue = xQueueCreate( lorawanConfigEVENT_QUEUE_SIZE, sizeof( LoRaWANEventInfo_t ) );
-        xResponseQueue = xQueueCreate( lorawanConfigRESPONSE_QUEUE_SIZE, sizeof( LoRaWANEventInfo_t ) );
+        xResponseQueue = xQueueCreate( lorawanConfigRESPONSE_QUEUE_SIZE, sizeof( LoRaMacEventInfoStatus_t ) );
         xDownlinkQueue = xQueueCreate( lorawanConfigDOWNLINK_QUEUE_SIZE, sizeof( LoRaWANMessage_t ) );
 
         if( ( xEventQueue == NULL ) || ( xResponseQueue == NULL ) || ( xDownlinkQueue == NULL ) )
@@ -601,7 +587,7 @@ LoRaMacStatus_t LoRaWAN_Join( void )
     MlmeReq_t mlmeReq = { 0 };
     MibRequestConfirm_t mibReq = { 0 };
     uint32_t ulDutyCycleTimeMS = 0U;
-    LoRaWANEventInfo_t event = { 0 };
+    LoRaMacEventInfoStatus_t responseStatus;
     size_t xNumTries;
 
     /* Configure the credentials before each join operation. */
@@ -640,9 +626,9 @@ LoRaMacStatus_t LoRaWAN_Join( void )
 
             if( status == LORAMAC_STATUS_OK )
             {
-                xQueueReceive( xResponseQueue, &event, portMAX_DELAY );
+                xQueueReceive( xResponseQueue, &responseStatus, portMAX_DELAY );
 
-                if( ( event.type == LORAWAN_EVENT_JOIN_RESPONSE ) && ( event.status == LORAMAC_EVENT_INFO_STATUS_OK ) )
+                if( responseStatus == LORAMAC_EVENT_INFO_STATUS_OK )
                 {
                     configPRINTF( ( "Successfully joined a LoRaWAN network.\n" ) );
 
@@ -658,7 +644,7 @@ LoRaMacStatus_t LoRaWAN_Join( void )
                 }
                 else
                 {
-                    configPRINTF( ( "Failed to join loRaWAN network with status %d.\n", event.status ) );
+                    configPRINTF( ( "Failed to join loRaWAN network with status %d.\n", responseStatus ) );
                     status = LORAMAC_STATUS_ERROR;
                 }
             }
@@ -717,7 +703,7 @@ LoRaMacStatus_t LoRaWAN_Send( LoRaWANMessage_t * pMessage,
     LoRaMacTxInfo_t txInfo;
     LoRaMacStatus_t status;
     uint32_t ulDutyCycleTimeMS = 0;
-    LoRaWANEventInfo_t event;
+    LoRaMacEventInfoStatus_t responseStatus;
 
     status = LoRaMacQueryTxPossible( pMessage->length, &txInfo );
 
@@ -756,21 +742,9 @@ LoRaMacStatus_t LoRaWAN_Send( LoRaWANMessage_t * pMessage,
 
     if( status == LORAMAC_STATUS_OK )
     {
-        xQueueReceive( xResponseQueue, &event, portMAX_DELAY );
+        xQueueReceive( xResponseQueue, &responseStatus, portMAX_DELAY );
 
-        if( event.status == LORAMAC_EVENT_INFO_STATUS_OK )
-        {
-            if( ( ( confirmed == true ) && ( event.type == LORAWAN_EVENT_CONFIRMED_MESSAGE_ACK ) && ( event.info.ackReceived == true ) ) ||
-                ( ( confirmed == false ) && ( event.type == LORAWAN_EVENT_UNCONFIRMED_MESSAGE_SENT ) ) )
-            {
-                status = LORAMAC_STATUS_OK;
-            }
-            else
-            {
-                status = LORAMAC_STATUS_ERROR;
-            }
-        }
-        else
+        if( responseStatus != LORAMAC_EVENT_INFO_STATUS_OK )
         {
             status = LORAMAC_STATUS_ERROR;
         }

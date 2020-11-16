@@ -44,25 +44,22 @@ typedef struct LoRaWANMessage
 /**
  * @brief Information sent as part of link check reply event.
  */
-typedef struct LoraWANLinkCheckInfo
+typedef struct LoRaWANLinkCheckInfo
 {
     uint8_t DemodMargin; /**< @brief Demodulation margin. Contains the link margin [dB] of the last successfully received LinkCheckReq. */
     uint8_t NbGateways;  /**< @brief Number of gateways which received the last LinkCheckReq. */
-} LoraWANLinkCheckInfo_t;
+} LoRaWANLinkCheckInfo_t;
 
 /**
  * @brief Event types received from LoRaWAN network.
  */
 typedef enum LoRaWANEventType
 {
-    LORAWAN_EVENT_UNKOWN = 0,               /**< @brief Type to denote an unexpected event type. */
-    LORAWAN_EVENT_JOIN_RESPONSE,            /**< @brief Successful or failed join response. */
-    LORAWAN_EVENT_UNCONFIRMED_MESSAGE_SENT, /**< @brief Indicates an unconfirmed  payload is sent out of radio. */
-    LORAWAN_EVENT_CONFIRMED_MESSAGE_ACK,    /**< @brief Indicates an acknowledgment for an confirmed uplink payload. */
-    LORAWAN_EVENT_DOWNLINK_PENDING,         /**< @brief Indicates that server has to send more downlink data or waiting for a mac command uplink. */
-    LORAWAN_EVENT_TOO_MANY_FRAME_LOSS,      /**< @brief Indicates too many frames are missed between end device and LoRa network server. */
-    LORAWAN_EVENT_DEVICE_TIME_UPDATED,      /**< @brief Indicates the device time has been synchronized with LoRa network server. */
-    LORAWAN_EVENT_LINK_CHECK_REPLY          /**< @brief Reply for a link check request from end device. */
+    LORAWAN_EVENT_UNKOWN = 0,          /**< @brief Type to denote an unexpected event type. */
+    LORAWAN_EVENT_DOWNLINK_PENDING,    /**< @brief Indicates that server has to send more downlink data or waiting for a mac command uplink. */
+    LORAWAN_EVENT_TOO_MANY_FRAME_LOSS, /**< @brief Indicates too many frames are missed between end device and LoRa network server. */
+    LORAWAN_EVENT_DEVICE_TIME_UPDATED, /**< @brief Indicates the device time has been synchronized with LoRa network server. */
+    LORAWAN_EVENT_LINK_CHECK_REPLY     /**< @brief Reply for a link check request from end device. */
 } LoRaWANEventType_t;
 
 /**
@@ -75,7 +72,7 @@ typedef struct LoRaWANEventInfo
 
     union
     {
-        LoraWANLinkCheckInfo_t linkCheck; /**< @brief Link check information associated with LORAWAN_EVENT_LINK_CHECK_REPLY. */
+        LoRaWANLinkCheckInfo_t linkCheck; /**< @brief Link check information associated with LORAWAN_EVENT_LINK_CHECK_REPLY. */
         bool ackReceived;                 /**< @brief Acknoweldgement flag for a confirmed uplink. */
     } info;
 } LoRaWANEventInfo_t;
