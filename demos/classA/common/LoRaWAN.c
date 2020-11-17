@@ -53,6 +53,11 @@
 #define LORAWAN_KEY_SIZE               ( 16 )
 
 /**
+ * @brief Number of network parameters for LoRaWAN.
+ */
+#define LORAWAN_NUM_PARAMS             ( 3 )
+
+/**
  * @brief Handle for LoRaMAC task.
  */
 static TaskHandle_t xLoRaMacTask;
@@ -81,6 +86,17 @@ static LoRaMacPrimitives_t xLoRaMacPrimitives = { 0 };
  * @brief Static callbacks registered with LoRaMAC stack.
  */
 static LoRaMacCallback_t xLoRaMacCallbacks = { 0 };
+
+/**
+ * @brief Static array to hold all param types.
+ */
+static const Mib_t paramTypes[ LORAWAN_NUM_PARAMS ] =
+{
+    MIB_CHANNELS_DEFAULT_TX_POWER,
+    MIB_CHANNELS_DEFAULT_DATARATE,
+    MIB_RX2_DEFAULT_CHANNEL
+};
+
 
 
 /**
@@ -666,6 +682,92 @@ LoRaMacStatus_t LoRaWAN_Join( void )
 
     return status;
 }
+
+LoRaMacStatus_t LoRaWAN_GetNetworkParams( LoRaWANNetworkParams_t * pNetworkParams )
+{
+    MibRequestConfirm_t mibReq = { 0 };
+    LoRaMacStatus_t status;
+    size_t x;
+
+    configASSERT( pNetworkParams != NULL );
+
+    for( x = 0; x < LORAWAN_NUM_PARAMS; x++ )
+    {
+        memset( &mibReq, 0x00, sizeof( MibRequestConfirm_t ) );
+        mibReq.Type = paramTypes[ x ];
+        status = LoRaMacMibGetRequestConfirm( &mibReq );
+
+        if( status == LORAMAC_STATUS_OK )
+        {
+            switch( paramTypes[ x ] )
+            {
+                case MIB_CHANNELS_DEFAULT_TX_POWER:
+                    pNetworkParams->txPower = mibReq.Param.ChannelsTxPower;
+                    break;
+
+                case MIB_CHANNELS_DEFAULT_DATARATE:
+                    pNetworkParams->dataRate = mibReq.Param.ChannelsDatarate;
+                    break;
+
+                case MIB_RX2_DEFAULT_CHANNEL:
+                    pNetworkParams->rx2Channel = mibReq.Param.Rx2Channel;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return status;
+}
+
+LoRaMacStatus_t LoRaWAN_SetNetworkParams( LoRaWANNetworkParams_t * pNetworkParams )
+{
+    MibRequestConfirm_t mibReq = { 0 };
+    LoRaMacStatus_t status;
+    size_t x;
+
+    configASSERT( pNetworkParams != NULL );
+
+    for( x = 0; x < LORAWAN_NUM_PARAMS; x++ )
+    {
+        memset( &mibReq, 0x00, sizeof( MibRequestConfirm_t ) );
+        mibReq.Type = paramTypes[ x ];
+
+        switch( paramTypes[ x ] )
+        {
+            case MIB_CHANNELS_DEFAULT_TX_POWER:
+                mibReq.Param.ChannelsTxPower = pNetworkParams->txPower;
+                break;
+
+            case MIB_CHANNELS_DEFAULT_DATARATE:
+                mibReq.Param.ChannelsDatarate = pNetworkParams->dataRate;
+                break;
+
+            case MIB_RX2_DEFAULT_CHANNEL:
+                mibReq.Param.Rx2Channel = pNetworkParams->rx2Channel;
+                break;
+
+            default:
+                break;
+        }
+
+        status = LoRaMacMibSetRequestConfirm( &mibReq );
+
+        if( status != LORAMAC_STATUS_OK )
+        {
+            break;
+        }
+    }
+
+    return status;
+}
+
 
 LoRaMacStatus_t LoRaWAN_SetAdaptiveDataRate( bool enable )
 {

@@ -41,6 +41,17 @@ typedef struct LoRaWANMessage
     uint8_t dataRate;                              /**< @brief the data rate used to transfer the payload. */
 } LoRaWANMessage_t;
 
+
+/**
+ * @brief Network parameters for LoRaWAN.
+ */
+typedef struct LoRaWANNetworkParams
+{
+    int8_t txPower;               /**< @brief TX output power. */
+    uint8_t dataRate;             /**< @brief Data rate used for sending uplink. */
+    RxChannelParams_t rx2Channel; /**< @brief Second RX window channel parameters, data rate and frequeuncy.*/
+} LoRaWANNetworkParams_t;
+
 /**
  * @brief Information sent as part of link check reply event.
  */
@@ -55,7 +66,7 @@ typedef struct LoRaWANLinkCheckInfo
  */
 typedef enum LoRaWANEventType
 {
-    LORAWAN_EVENT_UNKOWN = 0,          /**< @brief Type to denote an unexpected event type. */
+    LORAWAN_EVENT_UNKNOWN = 0,         /**< @brief Type to denote an unexpected event type. */
     LORAWAN_EVENT_DOWNLINK_PENDING,    /**< @brief Indicates that server has to send more downlink data or waiting for a mac command uplink. */
     LORAWAN_EVENT_TOO_MANY_FRAME_LOSS, /**< @brief Indicates too many frames are missed between end device and LoRa network server. */
     LORAWAN_EVENT_DEVICE_TIME_UPDATED, /**< @brief Indicates the device time has been synchronized with LoRa network server. */
@@ -82,16 +93,34 @@ typedef struct LoRaWANEventInfo
  * Configures and starts the underlying LoRaMAC stack. Creates a high priority task to process LoRaMAC events from Radio.
  *
  * @param[in] region The region for the LoRaWAN network.
- * @return LORAMAC_STATUS_OK if the initialization was successful. Appropirate error code otherwise.
+ * @return LORAMAC_STATUS_OK if the initialization was successful. Appropriate error code otherwise.
  */
 LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region );
+
+/**
+ * @breif Retrieves the network parameters for LoRaWAN connectivity.
+ *
+ * @param[out] pNetworkParams Values for all network parameters.
+ * return LORAMAC_STATUS_OK If query network params was successful. Appropriate error code otherwise.
+ */
+LoRaMacStatus_t LoRaWAN_GetNetworkParams( LoRaWANNetworkParams_t * pNetworkParams );
+
+/**
+ * @breif Sets the network parameters to be used for LoRaWAN connectivity.
+ * This sets the default network parameters to be used for LoRaWAN connectivity. API should
+ * be invoked before a JOIN request.
+ *
+ * @param[in] pNetworkParams Values to be set for network parameters.
+ * return LORAMAC_STATUS_OK If set network params was successful. Appropriate error code otherwise.
+ */
+LoRaMacStatus_t LoRaWAN_SetNetworkParams( LoRaWANNetworkParams_t * pNetworkParams );
 
 /**
  * @brief Performs a join operation using OTAA handshake with the LoRa Network Server.
  * API is blocking untill the handshake is complete. It performs JOIN retries at
  * specified interval with a random jitter, for a configured number of tries.
  *
- * @return LORAMAC_STATUS_OK if the join was successful. Appropirate error code otherwise.
+ * @return LORAMAC_STATUS_OK if the join was successful. Appropriate error code otherwise.
  */
 LoRaMacStatus_t LoRaWAN_Join( void );
 
@@ -99,7 +128,7 @@ LoRaMacStatus_t LoRaWAN_Join( void );
  * @brief Activates the device by personalization without doing a JOIN handshake.
  * For ABP join, end-device does not exchange any message with LoRa Network Server.
  *
- * @return LORAMAC_STATUS_OK if the join was successful. Appropirate error code otherwise.
+ * @return LORAMAC_STATUS_OK if the join was successful. Appropriate error code otherwise.
  */
 LoRaMacStatus_t LoRaWAN_ActivateByPersonalization( void );
 
@@ -110,7 +139,7 @@ LoRaMacStatus_t LoRaWAN_ActivateByPersonalization( void );
  * uplink traffic from end-device. Its recommended to be always turned on for devices with fixed location.
  *
  * @param[in] enable Enable or disable flag
- * @return LORAMAC_STATUS_OK if the operation was successful. Appropirate error code otherwise.
+ * @return LORAMAC_STATUS_OK if the operation was successful. Appropriate error code otherwise.
  */
 LoRaMacStatus_t LoRaWAN_SetAdaptiveDataRate( bool enable );
 
@@ -151,7 +180,7 @@ LoRaMacStatus_t LoRaWAN_Send( LoRaWANMessage_t * pMessage,
  *
  * @param[out] pEventInfo Pointer to structure containing event type and other information.
  * @param[in] timeoutMS Timeout in milliseconds to block for an event.  Set to 0 to not block for an event.
- * @return pdFALSE if there are no more events. pdTRUE if there are more events to be processed.
+ * @return pdFALSE if there is no data.
  */
 BaseType_t LoRaWAN_Receive( LoRaWANMessage_t * pMessage,
                             uint32_t timeoutMS );
@@ -163,7 +192,7 @@ BaseType_t LoRaWAN_Receive( LoRaWANMessage_t * pMessage,
  *
  * @param[out] pEventInfo Pointer to structure containing event type and other information.
  * @param[in] timeoutMS Timeout in milliseconds to block for an event. Set to 0 to not block for an event.
- * @return pdFALSE if there are no more events. pdTRUE if there are more events to be processed.
+ * @return pdFALSE if there are no events to be processed.
  */
 BaseType_t LoRaWAN_PollEvent( LoRaWANEventInfo_t * pEventInfo,
                               uint32_t timeoutMS );
