@@ -56,6 +56,7 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/system&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../common/include&quot;"/>
 								</option>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1657062888" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1719665716" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
@@ -78,6 +79,36 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.380577223.753007883" name="classa_task.c" rcbsApplicability="disable" resourcePath="classa_task.c" toolsToInvoke="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1279935351.1861070668">
+						<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1279935351.1861070668" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1279935351">
+							<option id="gnu.c.compiler.option.include.paths.168039602" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/config&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../FreeRTOS-Kernel/include/&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../FreeRTOS-Kernel/portable/GCC/ARM_CM4F&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/CMSIS/Include&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/BSP/B-L475E-IOT01&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/STM32L4xx_HAL_Driver/Inc&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/CMSIS/Device/ST/STM32L4xx/Include&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/STM32L4xx_HAL_Driver/Inc/Legacy&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery/BSP/Components/vl53l0x/&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../logging/include&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/mac&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/mac/region&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/radio&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/radio/sx1276&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/peripherals/soft-se&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../common_io/include&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/system&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery&quot;"/>
+								<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../common/include&quot;"/>
+							</option>
+							<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1035975993" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+							<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1754655377" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+						</tool>
+					</fileInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>

@@ -22,17 +22,21 @@
  *
  * \author    MCD Application Team (C)( STMicroelectronics International )
  */
+
+#include "FreeRTOS.h"
+#include "timers.h"
+
 #include <math.h>
 #include <time.h>
-#include "stm32l4xx.h"
 #include "utilities.h"
 #include "delay.h"
 #include "board.h"
 #include "timer.h"
 #include "systime.h"
 #include "gpio.h"
-#include "lpm-board.h"
 #include "rtc-board.h"
+
+
 
 // MCU Wake Up Time
 #define MIN_ALARM_DELAY                             3 // in ticks
@@ -79,14 +83,14 @@
  */
 #define DIVC( X, N )                                ( ( ( X ) + ( N ) -1 ) / ( N ) )
 
+
 /*!
  * RTC timer context 
  */
 typedef struct
 {
-    uint32_t        Time;         // Reference time
-    RTC_TimeTypeDef CalendarTime; // Reference time in calendar format
-    RTC_DateTypeDef CalendarDate; // Reference date in calendar format
+    uint32_t        start_tick;    // Can store a relative ref for t_start
+
 }RtcTimerContext_t;
 
 /*!
@@ -105,45 +109,26 @@ static bool McuWakeUpTimeInitialized = false;
 static int16_t McuWakeUpTimeCal = 0;
 
 /*!
- * Number of days in each month on a normal year
- */
-static const uint8_t DaysInMonth[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
-/*!
- * Number of days in each month on a leap year
- */
-static const uint8_t DaysInMonthLeapYear[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
-/*!
  * \brief RTC Handle
  */
-static RTC_HandleTypeDef RtcHandle = 
-{
-    .Instance = NULL,
-    .Init = 
-    { 
-        .HourFormat = 0,
-        .AsynchPrediv = 0,
-        .SynchPrediv = 0,
-        .OutPut = 0,
-        .OutPutPolarity = 0,
-        .OutPutType = 0
-    },
-    .Lock = HAL_UNLOCKED,
-    .State = HAL_RTC_STATE_RESET
-};
+static TimerHandle_t RtcHandle = NULL;
+static uint32_t SecondsElapsed = 0;
 
+#if 0
 /*!
  * \brief RTC Alarm
  */
 static RTC_AlarmTypeDef RtcAlarm;
+#endif
 
 /*!
  * Keep the value of the RTC timer when the RTC alarm is set
  * Set with the \ref RtcSetTimerContext function
  * Value is kept as a Reference to calculate alarm
  */
-static RtcTimerContext_t RtcTimerContext;
+static RtcTimerContext_t RtcTimerContext = { 0 };
+
+#if 0 
 
 /*!
  * \brief Get the current time from calendar in ticks
@@ -153,9 +138,35 @@ static RtcTimerContext_t RtcTimerContext;
  * \retval calendarValue Time in ticks
  */
 static uint64_t RtcGetCalendarValue( RTC_DateTypeDef* date, RTC_TimeTypeDef* time );
+#endif
+
+/* No existing calendar date API with nrf52. So make a basic one. This runs every (second += a tick period + kernel_delays), 
+   then counts seconds elapsed in day, and days elapsed since rtc start */
+void FreeRTOS_RTC_Callback()
+{
+    configASSERT(SecondsElapsed != 0xFFFFFFFF); // Prevent overflow, for now
+    SecondsElapsed++;
+}
+
 
 void RtcInit( void )
 {
+
+// Going to use tick count instead
+#ifdef USE_SECOND_RESOLUTION
+    // Install FreeRTOS timer callback for updating RtcContext
+    RtcHandle = xTimerCreate("RTC",
+                             1000 / portTICK_PERIOD_MS,
+                             pdTRUE,
+                             (void *) 0,
+                             FreeRTOS_RTC_Callback);
+    configASSERT(RtcHandle != NULL);
+
+    // Start tracing immediately upon init
+    configASSERT(pdPASS == xTimerStart(RtcHandle, 0));
+
+#endif
+/*
     RTC_DateTypeDef date;
     RTC_TimeTypeDef time;
 
@@ -178,7 +189,7 @@ void RtcInit( void )
         date.WeekDay                  = RTC_WEEKDAY_MONDAY;
         HAL_RTC_SetDate( &RtcHandle, &date, RTC_FORMAT_BIN );
 
-        /*at 0:0:0*/
+        // at 0:0:0
         time.Hours                    = 0;
         time.Minutes                  = 0;
         time.Seconds                  = 0;
@@ -191,8 +202,8 @@ void RtcInit( void )
         // Enable Direct Read of the calendar registers (not through Shadow registers)
         HAL_RTCEx_EnableBypassShadow( &RtcHandle );
 
-        HAL_NVIC_SetPriority( RTC_Alarm_IRQn, 1, 0 );
-        HAL_NVIC_EnableIRQ( RTC_Alarm_IRQn );
+        HAL_NVIC_SetPriority( RTC_IRQn, 1, 0 );
+        HAL_NVIC_EnableIRQ( RTC_IRQn );
 
         // Init alarm.
         HAL_RTC_DeactivateAlarm( &RtcHandle, RTC_ALARM_A );
@@ -200,6 +211,7 @@ void RtcInit( void )
         RtcSetTimerContext( );
         RtcInitialized = true;
     }
+    */
 }
 
 /*!
@@ -210,9 +222,26 @@ void RtcInit( void )
  */
 uint32_t RtcSetTimerContext( void )
 {
+#ifdef USE_SECOND_RESOLUTION
+    // Demo won't be running long enough to require days. No need for now
+    taskENTER_CRITICAL();
+    RtcTimerContext.Seconds = 0;
+    taskEXIT_CRITICAL();
+
+    return RtcTimerContext.Seconds;
+
+#else
+    configASSERT(0); // TODO: Need to store what tick this func is called
+   
+    return 0;
+#endif
+    /*
     RtcTimerContext.Time = ( uint32_t )RtcGetCalendarValue( &RtcTimerContext.CalendarDate, &RtcTimerContext.CalendarTime );
     return ( uint32_t )RtcTimerContext.Time;
+    */
 }
+
+#if 0
 
 /*!
  * \brief Gets the RTC timer reference
@@ -225,6 +254,8 @@ uint32_t RtcGetTimerContext( void )
     return RtcTimerContext.Time;
 }
 
+
+#endif
 /*!
  * \brief returns the wake up time in ticks
  *
@@ -232,8 +263,10 @@ uint32_t RtcGetTimerContext( void )
  */
 uint32_t RtcGetMinimumTimeout( void )
 {
+    configASSERT(0); // What time unit is the stack's ticks, NOT FreeRTOS ticks. Same name different objects
     return( MIN_ALARM_DELAY );
 }
+
 
 /*!
  * \brief converts time in ms to time in ticks
@@ -243,22 +276,31 @@ uint32_t RtcGetMinimumTimeout( void )
  */
 uint32_t RtcMs2Tick( uint32_t milliseconds )
 {
+    return milliseconds / portTICK_PERIOD_MS;
+/*
     return ( uint32_t )( ( ( ( uint64_t )milliseconds ) * CONV_DENOM ) / CONV_NUMER );
+    */
 }
 
 /*!
- * \brief converts time in ticks to time in ms
+ * \brief converts time in ticks to time in ms. WIll be using FreeRTOS ticks here
  *
  * \param[IN] time in timer ticks
  * \retval returns time in milliseconds
  */
 uint32_t RtcTick2Ms( uint32_t tick )
 {
+    return tick * portTICK_PERIOD_MS;
+
+/*
     uint32_t seconds = tick >> N_PREDIV_S;
 
     tick = tick & PREDIV_S;
     return ( ( seconds * 1000 ) + ( ( tick * 1000 ) >> N_PREDIV_S ) );
+    */
 }
+
+#if 0
 
 /*!
  * \brief a delay of delay ms by polling RTC
@@ -279,6 +321,7 @@ void RtcDelayMs( uint32_t delay )
     }
 }
 
+#endif
 /*!
  * \brief Sets the alarm
  *
@@ -288,6 +331,8 @@ void RtcDelayMs( uint32_t delay )
  */
 void RtcSetAlarm( uint32_t timeout )
 {
+    configASSERT(0);
+/*
     // We don't go in Low Power mode for timeout below MIN_ALARM_DELAY
     if( ( int64_t )( MIN_ALARM_DELAY + McuWakeUpTimeCal ) < ( int64_t )( timeout - RtcGetTimerElapsedTime( ) ) )
     {
@@ -305,10 +350,14 @@ void RtcSetAlarm( uint32_t timeout )
     }
 
     RtcStartAlarm( timeout );
+    */
 }
+
 
 void RtcStopAlarm( void )
 {
+    configASSERT(0);
+    /*
     // Disable the Alarm A interrupt
     HAL_RTC_DeactivateAlarm( &RtcHandle, RTC_ALARM_A );
 
@@ -317,8 +366,10 @@ void RtcStopAlarm( void )
 
     // Clear the EXTI's line Flag for RTC Alarm
     __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
+    */
 }
 
+#if 0
 void RtcStartAlarm( uint32_t timeout )
 {
     uint16_t rtcAlarmSubSeconds = 0;
@@ -405,7 +456,7 @@ void RtcStartAlarm( uint32_t timeout )
     }
 
     /* Set RTC_AlarmStructure with calculated values*/
-    RtcAlarm.AlarmTime.SubSeconds     = PREDIV_S - rtcAlarmSubSeconds;
+    RtcAlarm.AlarmTime.:/     = PREDIV_S - rtcAlarmSubSeconds;
     RtcAlarm.AlarmSubSecondMask       = ALARM_SUBSECOND_MASK; 
     RtcAlarm.AlarmTime.Seconds        = rtcAlarmSeconds;
     RtcAlarm.AlarmTime.Minutes        = rtcAlarmMinutes;
@@ -422,26 +473,30 @@ void RtcStartAlarm( uint32_t timeout )
     HAL_RTC_SetAlarm_IT( &RtcHandle, &RtcAlarm, RTC_FORMAT_BIN );
 }
 
+#endif
+
+/*
+* This is supposed to return 'ticks' as used by this lorawan stack
+*/
 uint32_t RtcGetTimerValue( void )
 {
+    return (uint32_t) xTaskGetTickCount();
+/*
     RTC_TimeTypeDef time;
     RTC_DateTypeDef date;
 
     uint32_t calendarValue = ( uint32_t )RtcGetCalendarValue( &date, &time );
 
     return( calendarValue );
+    */
 }
 
 uint32_t RtcGetTimerElapsedTime( void )
 {
-  RTC_TimeTypeDef time;
-  RTC_DateTypeDef date;
-  
-  uint32_t calendarValue = ( uint32_t )RtcGetCalendarValue( &date, &time );
-
-  return( ( uint32_t )( calendarValue - RtcTimerContext.Time ) );
+    configASSERT(0); // There's currently no code that needs this
+  //return( ( uint32_t )( SecondsElapsed - RtcTimerContext.Seconds ) );
 }
-
+#if 0
 void RtcSetMcuWakeUpTime( void )
 {
     RTC_TimeTypeDef time;
@@ -451,7 +506,7 @@ void RtcSetMcuWakeUpTime( void )
     int16_t mcuWakeUpTime;
 
     if( ( McuWakeUpTimeInitialized == false ) &&
-       ( HAL_NVIC_GetPendingIRQ( RTC_Alarm_IRQn ) == 1 ) )
+       ( HAL_NVIC_GetPendingIRQ( RTC_IRQn ) == 1 ) )
     {
         /* WARNING: Works ok if now is below 30 days
          *          it is ok since it's done once at first alarm wake-up
@@ -512,9 +567,18 @@ static uint64_t RtcGetCalendarValue( RTC_DateTypeDef* date, RTC_TimeTypeDef* tim
 
     return( calendarValue );
 }
+#endif
 
 uint32_t RtcGetCalendarTime( uint16_t *milliseconds )
 {
+    uint32_t current_tick = (uint32_t) xTaskGetTickCount();
+    uint32_t total_ms     = portTICK_PERIOD_MS * current_tick;
+    uint32_t seconds      = total_ms / 1000;
+    *milliseconds         = total_ms % 1000;
+
+    return seconds;
+
+    /*    
     RTC_TimeTypeDef time ;
     RTC_DateTypeDef date;
     uint32_t ticks;
@@ -528,17 +592,20 @@ uint32_t RtcGetCalendarTime( uint16_t *milliseconds )
     *milliseconds = RtcTick2Ms( ticks );
 
     return seconds;
+    */
 }
+
+#if 0
 
 /*!
  * \brief RTC IRQ Handler of the RTC Alarm
  */
-void RTC_Alarm_IRQHandler( void )
+void RTC_IRQHandler( void )
 {
     RTC_HandleTypeDef* hrtc = &RtcHandle;
 
     // Enable low power at irq
-    //LpmSetStopMode( LPM_RTC_ID, LPM_ENABLE );
+    LpmSetStopMode( LPM_RTC_ID, LPM_ENABLE );
 
     // Clear the EXTI's line Flag for RTC Alarm
     __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
@@ -564,23 +631,36 @@ void RTC_Alarm_IRQHandler( void )
  */
 void HAL_RTC_AlarmAEventCallback( RTC_HandleTypeDef *hrtc )
 {
-	/*
-	 * Do nothing. Timers are handled using FreeRTOS timers.
-	 */
+    TimerIrqHandler( );
 }
+#endif
+
+// These backups are used to store a snapshot of seconds(data0) and subseconds(data1). 
+// For demo, just save these in static var for now
+static uint32_t rtc_bkup_d0 = 0;
+static uint32_t rtc_bkup_d1 = 0;
+
 
 void RtcBkupWrite( uint32_t data0, uint32_t data1 )
 {
+    rtc_bkup_d0 = data0;
+    rtc_bkup_d1 = data1;
+    /*
     HAL_RTCEx_BKUPWrite( &RtcHandle, RTC_BKP_DR0, data0 );
     HAL_RTCEx_BKUPWrite( &RtcHandle, RTC_BKP_DR1, data1 );
+    */
 }
 
 void RtcBkupRead( uint32_t *data0, uint32_t *data1 )
 {
+    *data0 = rtc_bkup_d0;
+    *data1 = rtc_bkup_d1;
+/*
   *data0 = HAL_RTCEx_BKUPRead( &RtcHandle, RTC_BKP_DR0 );
   *data1 = HAL_RTCEx_BKUPRead( &RtcHandle, RTC_BKP_DR1 );
+  */
 }
-
+#if 0
 void RtcProcess( void )
 {
     // Not used on this platform.
@@ -620,3 +700,5 @@ TimerTime_t RtcTempCompensation( TimerTime_t period, float temperature )
     // Calculate the resulting period
     return ( TimerTime_t ) interim;
 }
+
+#endif

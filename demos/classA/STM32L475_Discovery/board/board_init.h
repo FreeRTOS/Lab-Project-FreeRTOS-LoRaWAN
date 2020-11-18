@@ -85,6 +85,8 @@ void Led_Off( void );
 extern RTC_HandleTypeDef xHrtc;
 extern RNG_HandleTypeDef xHrng;
 
+void board_init( void );
+
 #ifdef __cplusplus
     }
 #endif

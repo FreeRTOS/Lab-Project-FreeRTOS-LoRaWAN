@@ -27,9 +27,13 @@
  <Project>
   <ProjectSessionItem path="classa_demo"/>
   <ProjectSessionItem path="classa_demo;classa_demo"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;config"/>
   <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node"/>
-  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;mac"/>
-  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;mac;region"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;nrf52"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;peripherals"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;radio"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;radio;sx126x"/>
+  <ProjectSessionItem path="classa_demo;classa_demo;LoRaMAC-Node;system"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="lorawan_demo" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -68,18 +72,25 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="54" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="0" top="45" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="26" y="67" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="0" top="41" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="80" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="config/LoRaWANConfig.h" selected="0" top="65" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="33" y="4158" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/LoRaWAN.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMac.c" selected="1" top="4192" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="4158" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/LoRaWAN.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMac.c" selected="0" top="4148" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="502" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/LoRaMac-node/src/mac/LoRaMac.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/peripherals/soft-se/soft-se.c" selected="0" top="487" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1074" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/LoRaMac-node/src/mac/LoRaMac.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMacCrypto.c" selected="0" top="1067" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="186" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/LoRaMac-node/src/peripherals/soft-se/soft-se.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/secure-element.h" selected="0" top="166" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="171" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/LoRaMac-node/src/peripherals/soft-se/soft-se.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMacTypes.h" selected="0" top="156" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="67" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="config/board-config.h" selected="0" top="50" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="59" y="560" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/LoRaWAN.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMac.h" selected="0" top="543" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="74" y="14" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/freertos_osal/board.c" useBinaryEdit="0" left="0" path="config/board-config.h" selected="1" top="60" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="560" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/LoRaWAN.c" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/mac/LoRaMac.h" selected="0" top="543" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="32" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../common/credentials.c" selected="0" top="3" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="28" y="569" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../common/LoRaWAN.c" selected="0" top="556" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="569" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../common/LoRaWAN.c" selected="0" top="556" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="70" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../common/include/LoRaWAN.h" selected="0" top="63" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="204" useTextEdit="1" openedFrom="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/Nordic_NRF52/main.c" useBinaryEdit="0" left="0" path="board/board_init.c" selected="0" top="190" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../freertos_osal/delay.c" selected="0" top="18" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../LoRaMac-node/src/system/delay.h" selected="0" top="12" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="13" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../boards/Nordic_NRF52/pinName-board.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../boards/Nordic_NRF52/pinName-ioe.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../boards/board.h" selected="0" top="105" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="48" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../freertos_osal/board.c" selected="0" top="39" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="classa_demo" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/include" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="classa_demo" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Workspace/Lab-Project-FreeRTOS-LoRaWAN/demos/classA/common/include" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

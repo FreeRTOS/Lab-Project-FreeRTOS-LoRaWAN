@@ -42,14 +42,34 @@
 			<locationURI>PARENT-3-PROJECT_LOC/LoRaMac-node</locationURI>
 		</link>
 		<link>
+			<name>LoRaWAN.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/common/LoRaWAN.c</locationURI>
+		</link>
+		<link>
+			<name>LoRaWAN.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/common/include/LoRaWAN.h</locationURI>
+		</link>
+		<link>
 			<name>STM32L4xx_HAL_Driver</name>
 			<type>2</type>
 			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/STM32L4xx_HAL_Driver</locationURI>
 		</link>
 		<link>
+			<name>classa_task.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/common/classa_task.c</locationURI>
+		</link>
+		<link>
 			<name>common_io</name>
 			<type>2</type>
 			<locationURI>PARENT-3-PROJECT_LOC/common_io</locationURI>
+		</link>
+		<link>
+			<name>credentials.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/common/credentials.c</locationURI>
 		</link>
 		<link>
 			<name>freertos_kernel</name>
@@ -97,9 +117,9 @@
 			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/pinName-board.h</locationURI>
 		</link>
 		<link>
-			<name>LoRaMac-node/src/stm32l475/rtc-board.h</name>
+			<name>LoRaMac-node/src/stm32l475/rtc-board.c</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/boards/rtc-board.h</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/rtc-board.c</locationURI>
 		</link>
 		<link>
 			<name>LoRaMac-node/src/stm32l475/sx1276-board.h</name>
@@ -110,6 +130,11 @@
 			<name>LoRaMac-node/src/stm32l475/sx1276mb1las-board.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/sx1276mb1las-board.c</locationURI>
+		</link>
+		<link>
+			<name>LoRaMac-node/src/stm32l475/utilities.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/LoRaMac-node/src/boards/mcu/utilities.c</locationURI>
 		</link>
 		<link>
 			<name>LoRaMac-node/src/stm32l475/utilities.h</name>

@@ -46,7 +46,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "board_init.h"
 #define ARD_D13_Pin          GPIO_PIN_5
 #define ARD_D13_GPIO_Port    GPIOA
 #define ARD_D12_Pin          GPIO_PIN_6

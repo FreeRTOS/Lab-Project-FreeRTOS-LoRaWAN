@@ -46,7 +46,7 @@
   */
 
 #include <string.h>
-#include "main.h"
+#include "board_init.h"
 #include "stm32l4xx_hal.h"
 
 int mbedtls_hardware_poll( void *data, unsigned char *output, size_t len, size_t *olen );

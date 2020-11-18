@@ -46,7 +46,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "board_init.h"
 #include "flash.h"
 #include <string.h>
 #include <stdbool.h>

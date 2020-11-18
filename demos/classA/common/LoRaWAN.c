@@ -20,7 +20,7 @@
  *
  * 1 tab == 4 spaces!
  */
-
+#include <string.h>
 #include "LoRaWAN.h"
 #include "task.h"
 #include "queue.h"
@@ -95,39 +95,6 @@ static const Mib_t paramTypes[ LORAWAN_NUM_PARAMS ] =
     MIB_CHANNELS_DEFAULT_TX_POWER,
     MIB_CHANNELS_DEFAULT_DATARATE,
     MIB_RX2_DEFAULT_CHANNEL
-};
-
-
-
-/**
- * @brief Strings for denoting status responses from LoRaMAC layer.
- */
-static const char * MacStatusStrings[] =
-{
-    "OK",                            /* LORAMAC_STATUS_OK */
-    "Busy",                          /* LORAMAC_STATUS_BUSY */
-    "Service unknown",               /* LORAMAC_STATUS_SERVICE_UNKNOWN */
-    "Parameter invalid",             /* LORAMAC_STATUS_PARAMETER_INVALID */
-    "Frequency invalid",             /* LORAMAC_STATUS_FREQUENCY_INVALID */
-    "Datarate invalid",              /* LORAMAC_STATUS_DATARATE_INVALID */
-    "Frequency or datarate invalid", /* LORAMAC_STATUS_FREQ_AND_DR_INVALID */
-    "No network joined",             /* LORAMAC_STATUS_NO_NETWORK_JOINED */
-    "Length error",                  /* LORAMAC_STATUS_LENGTH_ERROR */
-    "Region not supported",          /* LORAMAC_STATUS_REGION_NOT_SUPPORTED */
-    "Skipped APP data",              /* LORAMAC_STATUS_SKIPPED_APP_DATA */
-    "Duty-cycle restricted",         /* LORAMAC_STATUS_DUTYCYCLE_RESTRICTED */
-    "No channel found",              /* LORAMAC_STATUS_NO_CHANNEL_FOUND */
-    "No free channel found",         /* LORAMAC_STATUS_NO_FREE_CHANNEL_FOUND */
-    "Busy beacon reserved time",     /* LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME */
-    "Busy ping-slot window time",    /* LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME */
-    "Busy uplink collision",         /* LORAMAC_STATUS_BUSY_UPLINK_COLLISION */
-    "Crypto error",                  /* LORAMAC_STATUS_CRYPTO_ERROR */
-    "FCnt handler error",            /* LORAMAC_STATUS_FCNT_HANDLER_ERROR */
-    "MAC command error",             /* LORAMAC_STATUS_MAC_COMMAD_ERROR */
-    "ClassB error",                  /* LORAMAC_STATUS_CLASS_B_ERROR */
-    "Confirm queue error",           /* LORAMAC_STATUS_CONFIRM_QUEUE_ERROR */
-    "Multicast group undefined",     /* LORAMAC_STATUS_MC_GROUP_UNDEFINED */
-    "Unknown error",                 /* LORAMAC_STATUS_ERROR */
 };
 
 /**
@@ -464,14 +431,21 @@ static uint8_t prvGetBatteryLevel( void )
 
 static void prvOnMacNotify( void )
 {
-    xTaskNotifyAndQuery( xLoRaMacTask, LORAWAN_EVENT_MAC_PENDING, eSetBits, NULL );
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if( xPortIsInsideInterrupt() )
+    {
+        xTaskNotifyAndQueryFromISR( xLoRaMacTask, LORAWAN_EVENT_MAC_PENDING, eSetBits, NULL, &xHigherPriorityTaskWoken );
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+    }
+    else
+    {
+        xTaskNotifyAndQuery( xLoRaMacTask, LORAWAN_EVENT_MAC_PENDING, eSetBits, NULL );
+    }
 }
 
 static void prvOnRadioNotify()
 {
-    BaseType_t xHigherPriorityTaskWoken;
-
-    xHigherPriorityTaskWoken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xTaskNotifyAndQueryFromISR( xLoRaMacTask, LORAWAN_EVENT_RADIO_PENDING, eSetBits, NULL, &xHigherPriorityTaskWoken );
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -509,7 +483,6 @@ static void prvLoRaMACTask( void * pvParameters )
 
 LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
 {
-    uint32_t ulNotifiedValue;
     LoRaMacStatus_t status;
 
     memset( &xLoRaMacPrimitives, 0x00, sizeof( LoRaMacPrimitives_t ) );
@@ -552,7 +525,10 @@ LoRaMacStatus_t LoRaWAN_Init( LoRaMacRegion_t region )
     {
         if( xTaskCreate( prvLoRaMACTask, "LoRaMac", lorawanConfigLORAMAC_TASK_STACK_SIZE, NULL, lorawanConfigLORAMAC_TASK_PRIORITY, &xLoRaMacTask ) == pdTRUE )
         {
-            Radio.SetEventNotify( &prvOnRadioNotify );
+            if( Radio.SetEventNotify != NULL )
+            {
+                Radio.SetEventNotify( &prvOnRadioNotify );
+            }
         }
         else
         {
@@ -781,9 +757,7 @@ LoRaMacStatus_t LoRaWAN_SetAdaptiveDataRate( bool enable )
 
 LoRaMacStatus_t LoRaWAN_RequestDeviceTimeSync( void )
 {
-    LoRaMacStatus_t status;
     MlmeReq_t mlmeReq = { 0 };
-
     mlmeReq.Type = MLME_DEVICE_TIME;
     return LoRaMacMlmeRequest( &mlmeReq );
 }
@@ -791,9 +765,7 @@ LoRaMacStatus_t LoRaWAN_RequestDeviceTimeSync( void )
 
 LoRaMacStatus_t LoRaWAN_RequestLinkCheck( void )
 {
-    LoRaMacStatus_t status;
     MlmeReq_t mlmeReq = { 0 };
-
     mlmeReq.Type = MLME_LINK_CHECK;
     return LoRaMacMlmeRequest( &mlmeReq );
 }
