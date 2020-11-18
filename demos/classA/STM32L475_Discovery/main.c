@@ -147,7 +147,6 @@ int main( void )
 
 void vApplicationDaemonTaskStartupHook( void )
 {
-    /* LoRaWAN task is created from the main function so le
 }
 /*-----------------------------------------------------------*/
 
@@ -738,35 +737,9 @@ extern void LORAWAN_HAL_GPIO_EXTI_Callback( uint16_t gpioPin );
  */
 void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin )
 {
-
-    switch( GPIO_Pin )
-    {
-        /* Pin number 1 is connected to Inventek Module Cmd-Data
-         * ready pin. */
-        case ( GPIO_PIN_1 ):
-            SPI_WIFI_ISR();
-            break;
-        default:
-        	/**
-        	 * LoRa porting layer defines its own GPIO interrupt callback multiplexing in
-        	 * gpio-board.c.
-        	 */
-        	LORAWAN_HAL_GPIO_EXTI_Callback( GPIO_Pin );
-            break;
-    }
+    LORAWAN_HAL_GPIO_EXTI_Callback( GPIO_Pin );
 }
 
-/*-----------------------------------------------------------*/
-
-/**
- * @brief SPI Interrupt Handler.
- *
- * @note Inventek module is configured to use SPI3.
- */
-void SPI3_IRQHandler( void )
-{
-    HAL_SPI_IRQHandler( &( hspi ) );
-}
 /*-----------------------------------------------------------*/
 
 /**

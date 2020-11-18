@@ -27,7 +27,8 @@
  * @file iot_i2c.c
  * @brief HAL i2c implementation on STM32L4 Discovery Board
  */
-#include "iot_config.h"
+
+#include "FreeRTOS.h"
 
 /* ST Board includes. */
 #include "stm32l4xx_hal.h"

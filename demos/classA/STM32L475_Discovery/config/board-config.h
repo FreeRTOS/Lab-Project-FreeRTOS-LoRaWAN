@@ -122,6 +122,9 @@ extern "C"
 #define I2C_SDA                                     PB_9
 
 
+#define LORA_MAC_SPI_FREQUENCY                   ( 10000000 )
+
+
 #ifdef __cplusplus
 }
 #endif

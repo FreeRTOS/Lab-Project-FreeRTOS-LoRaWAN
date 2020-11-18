@@ -32,6 +32,7 @@
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 									<listOptionValue builtIn="false" value="LORAWAN_USE_EXTERNAL_TIMERS"/>
 									<listOptionValue builtIn="false" value="REGION_US915"/>
+									<listOptionValue builtIn="false" value="SX1276MB1LAS"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.379121949" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}&quot;"/>
@@ -53,6 +54,8 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/peripherals/soft-se&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../common_io/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../LoRaMac-node/src/system&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../boards/STM32L475_Discovery&quot;"/>
 								</option>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1657062888" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1719665716" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
@@ -72,26 +75,6 @@
 							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.319927497" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.349438510" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.22320290" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
-							</tool>
-						</toolChain>
-					</folderInfo>
-					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.380577223.275127397" name="/" resourcePath="LoRaMac-node/src">
-						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.982861588" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
-							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1724886170.463746826" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.1724886170"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1827483137.558051240" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1827483137"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.823880744.44941242" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.823880744"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.board.1675988866.662588844" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.1675988866"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1232003218" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1279935351">
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1806810490" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.755118513" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
-							</tool>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.788948484" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1116053403"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1228414409" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.159395874"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1637928609" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1402735649"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.1887470468" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.1773231351"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1062441893" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.319927497">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.451695517" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.1386694928" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>

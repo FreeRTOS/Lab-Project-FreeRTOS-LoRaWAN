@@ -92,9 +92,9 @@
 			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/gpio-board.c</locationURI>
 		</link>
 		<link>
-			<name>LoRaMac-node/src/stm32l475/rtc-board.c</name>
+			<name>LoRaMac-node/src/stm32l475/pinName-board.h</name>
 			<type>1</type>
-			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/rtc-board.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/boards/STM32L475_Discovery/pinName-board.h</locationURI>
 		</link>
 		<link>
 			<name>LoRaMac-node/src/stm32l475/rtc-board.h</name>
