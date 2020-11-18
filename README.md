@@ -23,11 +23,10 @@ An important feature of class A based communication is it consumes less power wh
 ## Supported Platforms
 Vendor | MCU | LoRa Radios | IDE 
 |----|----|----|----
-Nordic | NRF52840-DK | sx1262mb2cas | Segger Embedded Studio (SES)
+Nordic | NRF52840-DK | SX1262MB2CAS | Segger Embedded Studio (SES)
+STMicroelectronics | STM32L4 Discovery Kit IoT Node  | SX1276MB1LAS | System Workbench for STM32
 
-
-## Running the demo on Nordic NRf52840
-### Download and View the Code
+## Downloading the Code
 The demo leverages open-source [FreeRTOS kernel and libraries](https://github.com/aws/amazon-freertos) and sligthly patched version of open source
 [LoRaMac-node v4.4.4](https://github.com/Lora-net/LoRaMac-node/tree/v4.4.4).
 
@@ -42,35 +41,62 @@ cd Lab-Project-FreeRTOS-LoRaWAN
 git apply  FreeRTOS-LoRaMac-node-v4_4_4.patch
 ```
 
-3) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
+## Setting up IDE and Project
 
-4) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click `Open`. 
+### Nordic NRF52840
 
-### Create a TTN account, TTN Appication, and Add Your Device
+1) Download and install Segger Embedded Studio IDE for your operating system, by visting the page [here](https://www.segger.com/downloads/embedded-studio/)
+
+2) Open the IDE, choose `File` from menu and select `Open Solution`. Choose `Lab-Project-FreeRTOS-LoRaWAN\demos\classA\Nordic_NRF52\classa_demo.emProject` and click `Open`.
+
+### STMicroElectronics STM32L4 Discovery Kit IoT Node
+1) Download and install System Workbench IDE for your operating system, by visting the page [here](https://www.st.com/en/development-tools/sw4stm32.html)
+
+2) Open the IDE, choose `File` from menu and then select `Open Projects From File System`.
+
+3) Choose directory path `Lab-Project-FreeRTOS-LoRaWAN\demos\classA\STM32L475_Discovery`, then choose the selected project and click on `Finish`.
+
+
+## Create a TTN account, TTN Appication, and register your device
 1) Navigate to [TTN home page](https://www.thethingsnetwork.org/).
 2) Create a free account by clicking on `Signup` at the top-right, and following its steps.
 3) Login to your TTN account. You can do this at TTN homepage at top-right.
 4) Click on your account icon at the top-right, and in the submenu select `Console`, then select `Applications`.
 6) From here, you can follow TTN's guide for [Adding a TTN Device and Creating a TTN Application](https://www.thethingsnetwork.org/docs/devices/registration.html).
 
-### Configure Application Settings
+## Configure device credentials
 
-Variable/Macro | Default | Description 
+Class A demo uses Over The Air Activation for which three credentials `Device EUI` , `Join EUI` and `Application Key` are required. For demonstration purposes, these credentials are configured statically in the code, however for production use case this can be replaced by a secure element.
+
+To configure these credentials statically in code, goto the file `demos/classA/common/credentials.c` and update the following variables.
+
+Variable | Description | Value Format
 ----|----|----
-`DEV_EUI` | EMPTY | DevEui given or assigned by TTN. Big-Endian
-`JOIN_EUI`| EMPTY | AppEui for TTN Application Endpoint
-`APP_NWK_KEY` | EMPTY | AppKey for TTN Application Endpoint
+`devEUI` | DevEui already registered with TTN or one assigned by TTN. | Array of 8 byte hex values in big-endian ordering
+`joinEUI`| Application EUI for TTN Application.| Array of 8 byte hex values in big-endian ordering
+`appkey` | Application Key for TTN Application.| Array of 16 byte hex values in big-endian ordering
 
-Before building the code, you'll need to supply your TTN device parameters for the above macros.
+## Build and Run the Code
 
-### Build and Run the Code
-1) Connect your nrf52840-dk.
-2) In SES `Build` Menu, select `Build classa_demo`.
-3) In SES `Debug` Menu, select `Go`. This will flash and run the demo in debug mode.
+### Nordic NRF52840-DK
+1) Plug in the SX1262MB2CAS shield on the top of Nordic board.
+2) Connect the appropriate antenna for the frequency plan to the shield.
+3) Connect your nrf52840-dk board to a PC using usb cable.
+4) In SES `Build` Menu, select `Build classa_demo`.
+5) In SES `Debug` Menu, select `Go`. This will flash and run the demo in debug mode.
 
 There is a breakpoint at the beginning of the program. When you're ready, you can continue exectution.
 The UART output will be shown in the IDE's `Debug Terminal`.
 
-### View your device traffic in TTN
+### STMicroelectronics STM32L4 Discovery Kit IoT Node
+1) Plug in the SX1276MB1LAS shield on the top of STM32L4 Discovery board.
+2) Connect the appropriate antenna for the frequency plan to the shield.
+3) Connect your STM32L4 board to a PC using usb cable.
+4) From System WorkBench IDE, choose `Project` and then `Build All` or press `CTRL-B`.
+5) Once build is completed successfully, click on `Debug` button. This will flash and run the demo in debug mode.
+6) It halts at a breakpoint in `main`. Click on `Resume` button.
+7) You can view output on the UART console using any serial terminal application.
+
+## View your device traffic in TTN
 From TTN `Applications` page, select your application. In the application submenu, click on `Data`. 
 Here you see all valid traffic interfacing your TTN Application.
