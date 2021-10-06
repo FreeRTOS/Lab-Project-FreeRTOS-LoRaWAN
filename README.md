@@ -38,7 +38,7 @@ git clone --recurse-submodules git@github.com:FreeRTOS/Lab-Project-FreeRTOS-LoRa
 
 ```
 cd Lab-Project-FreeRTOS-LoRaWAN
-git apply  FreeRTOS-LoRaMac-node-v4_4_4.patch
+git apply --whitespace=fix FreeRTOS-LoRaMac-node-v4_4_4.patch
 ```
 
 ## Setting up IDE and Project
