@@ -1,3 +1,5 @@
+> ⚠️ **Disclaimer:** This repository is a FreeRTOS Labs reference project, provided for demonstration and evaluation purposes only, and should not be used in production.
+
 Reference implementation of LoRaWAN connectivity on FreeRTOS. The project is a FreeRTOS adaptation of Semtech's LoRaMAC Node implementation.
 # Getting Statted
 
